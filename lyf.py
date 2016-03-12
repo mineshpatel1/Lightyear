@@ -1,0 +1,155 @@
+#! /usr/bin/env python
+# LYF data integration function library
+
+import sys, os
+import requests
+import argparse
+import httplib2
+import tweepy
+
+from ConfigParser import ConfigParser	#	Used for reading the config file
+from apiclient.discovery import build	# Builds Google API service
+from oauth2client.service_account import ServiceAccountCredentials	# Google authenticator 
+from oauth2client import client, file, tools	# Functions for OAuth2
+from datetime import date, timedelta, datetime	# Date time
+from dateutil.parser import parse	# Date parser
+
+SCRIPT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
+CONFIG = os.path.join(SCRIPT_DIR, 'config.ini')
+
+# Class for youtube videos
+class VideoYT():
+	def __init__(self, id, name, publish_date, channel, views=0, likes=0, dislikes=0): # Initialiser
+		self.id = id
+		self.name = name
+		self.publish_date = publish_date
+		self.channel = channel
+		self.views = int(views)
+		self.likes = int(likes)
+		self.dislikes = int(dislikes)
+
+# Gets a configuration value from a section and parameter name
+def get_config(section, param):
+	parser = ConfigParser()
+	parser.read(CONFIG)
+	out = parser.get(section, param).replace('\\','')
+	return out
+	
+# Gets an authenticated service for a given Google API and versioin
+def google_api(api, version, scopes):
+	key_file = os.path.join(SCRIPT_DIR, get_config('GOOGLE_ANALYTICS','Key_File'))
+	credentials = ServiceAccountCredentials.from_json_keyfile_name(key_file, scopes=scopes)
+	http = credentials.authorize(httplib2.Http())
+	service = build(api, version, http=http) # Build the service object.
+	return service
+
+# Connects to Twitter API and returns the service object
+def twitter_api():
+	consumer_key = get_config('TWITTER', 'Consumer_Key')
+	consumer_secret = get_config('TWITTER', 'Consumer_Secret')
+	access_token = get_config('TWITTER', 'Access_Token')
+	access_token_secret = get_config('TWITTER', 'Access_Token_Secret')
+	
+	auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+	auth.set_access_token(access_token, access_token_secret)
+	api = tweepy.API(auth)
+	return(api)
+
+# Use the API service object to get the first profile id
+def get_ga_profile(service):
+	# Get a list of all Google Analytics accounts for this user
+	accounts = service.management().accounts().list().execute()
+
+	if accounts.get('items'):
+		# Get the first Google Analytics account.
+		account = accounts.get('items')[0].get('id')
+
+	# Get a list of all the properties for the first account.
+	properties = service.management().webproperties().list(accountId=account).execute()
+
+	if properties.get('items'):
+		# Get the first property id.
+		property = properties.get('items')[0].get('id')
+
+	# Get a list of all views (profiles) for the first property.
+	profiles = service.management().profiles().list(accountId=account, webPropertyId=property).execute()
+
+	if profiles.get('items'):
+		# return the first view (profile) id.
+		return profiles.get('items')[0].get('id')
+
+	return None
+
+# Query Facebook Graph API to get page information
+def fb_query(fields):
+	token = get_config('FACEBOOK', 'Access_Token')
+	graph_url = 'https://graph.facebook.com'
+	page_id = 'me' # Access token is for own page
+	# fields = 'name,likes,new_like_count,videos{description,updated_time,likes}'
+
+	r = requests.get('%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields))
+	r.raise_for_status()
+	return(r.json())
+
+# Query Google Analytics API to retrieve some data
+def ga_query(service, start_date, end_date, metrics):
+	return service.data().ga().get(
+		ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+		start_date=start_date,
+		end_date=start_date,
+		metrics=metrics).execute()
+
+# Get all youtube videos belonging to the configured YouTube channel
+def my_yt_videos():
+	youtube = google_api('youtube', 'v3', ['https://www.googleapis.com/auth/youtube'])
+	max_results = 50
+	
+	def video_search(youtube, next_page, videos=[]):
+		if (next_page == False):
+			results = youtube.search().list(
+				type="video",
+				channelId=get_config('GOOGLE_ANALYTICS', 'YouTube_Channel'),
+				part="snippet",
+				maxResults=max_results
+			).execute()
+		else:
+			results = youtube.search().list(
+				type="video",
+				channelId=get_config('GOOGLE_ANALYTICS', 'YouTube_Channel'),
+				part="snippet",
+				pageToken=next_page,
+				maxResults=max_results
+			).execute()
+
+		video_ids = []
+		for item in results['items']:
+			video_ids.append(item['id']['videoId'])
+		video_ids = ','.join(video_ids)
+		
+		video_response = youtube.videos().list(
+			id=video_ids,
+    		part='snippet, statistics'
+		).execute()
+		
+		for item in video_response.get('items', []):
+			id = item['id']
+			title = item['snippet']['title']
+			publish_date = parse(item['snippet']['publishedAt'])
+			channel = item['snippet']['channelTitle']
+			views = item['statistics']['viewCount']
+			likes = item['statistics']['likeCount']
+			dislikes = item['statistics']['dislikeCount']
+			video = VideoYT(id, title, publish_date, channel, views, likes, dislikes)
+			videos.append(video)
+			
+		if (results.has_key('nextPageToken')):
+			videos = video_search(youtube, results['nextPageToken'], videos)
+	
+		return(videos)
+	
+	videos = video_search(youtube, False)
+	for video in videos:
+		print(video.id, video.name, video.views)
+	
+		
+		
