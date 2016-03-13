@@ -25,6 +25,11 @@ LOG_FORMAT = '%(levelname)s: %(asctime)s [%(filename)s (%(funcName)s - Line %(li
 LOG_FILE = os.path.join(SCRIPT_DIR, 'integration.log')
 logging.basicConfig(filename=LOG_FILE,level=logging.INFO, format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
 
+# Suppress sub module messages
+logging.getLogger("requests").setLevel(logging.CRITICAL)
+logging.getLogger("tweepy").setLevel(logging.CRITICAL)
+
+
 # Class for youtube videos
 class YT_Video():
 	def __init__(self, id, name, publish_date, channel, views=0, likes=0, dislikes=0): # Initialiser
