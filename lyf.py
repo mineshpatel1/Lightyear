@@ -22,13 +22,15 @@ CONFIG = os.path.join(SCRIPT_DIR, 'config.ini')
 # Set up log file
 global LOG_FORMAT, LOG_FILE
 LOG_FORMAT = '%(levelname)s: %(asctime)s [%(filename)s (%(funcName)s - Line %(lineno)s)]: %(message)s'
-LOG_FILE = os.path.join(SCRIPT_DIR, 'integration.log')
+LOG_FILE = os.path.join(SCRIPT_DIR, 'logs', 'out.log')
 logging.basicConfig(filename=LOG_FILE,level=logging.INFO, format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
 
 # Suppress sub module messages
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("tweepy").setLevel(logging.CRITICAL)
-
+logging.getLogger("discovery").setLevel(logging.CRITICAL)
+logging.getLogger("googleapiclient").setLevel(logging.CRITICAL)
+logging.getLogger("oauth2client").setLevel(logging.CRITICAL)
 
 # Class for youtube videos
 class YT_Video():
@@ -117,8 +119,7 @@ def fb_query(fields):
 	token = get_config('FACEBOOK', 'Access_Token')
 	graph_url = 'https://graph.facebook.com'
 	page_id = 'me' # Access token is for own page
-	# fields = 'name,likes,new_like_count,videos{description,updated_time,likes}'
-
+	
 	r = requests.get('%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields))
 	r.raise_for_status()
 	return(r.json())
@@ -176,12 +177,12 @@ def my_yt_videos():
 			
 		if (results.has_key('nextPageToken')):
 			videos = video_search(youtube, results['nextPageToken'], videos)
-	
-		return(videos)
+			return(videos)
+		else:
+			return(videos)
 	
 	videos = video_search(youtube, False)
-	for video in videos:
-		print(video.id, video.name, video.views)
+	return(videos)
 
 # Get MailChimp subscriber lists
 def get_mc_lists():

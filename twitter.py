@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
-import lyf
-import os, logging
+# Extract data from Twitter
+
+import lyf, logging
+import os
 import MySQLdb
 
 from datetime import date, timedelta, datetime	# Date time
@@ -25,25 +27,24 @@ def main():
 		# Check for yesterday's records to derive today's followers
 		db = lyf.mysql_conn()
 		db.query("select * from f_twitter_day where date_id = '%s'" % yesterday)
-	
 		result = db.store_result()
 		result = result.fetch_row(how=1)
 		
 		if (len(result) > 0):
-			twitter_rec['followers'] = twitter_rec['total_followers'] - result['total_followers']
-			twitter_rec['following'] = twitter_rec['total_following'] - result['total_following']
-			twitter_rec['tweets'] = twitter_rec['total_tweets'] - result['total_tweets']
+			twitter_rec['followers'] = int(twitter_rec['total_followers']) - int(result['total_followers'])
+			twitter_rec['following'] = int(twitter_rec['total_following']) - int(result['total_following'])
+			twitter_rec['tweets'] = int(twitter_rec['total_tweets']) - int(result['total_tweets'])
 		else:
 			twitter_rec['followers'] = 0
 			twitter_rec['following'] = 0
 			twitter_rec['tweets'] = 0
 		
 		lyf.merge_into_table(db, 'f_twitter_day', twitter_rec, ['date_id'])
-		
 		db.close()
 		
-		logging.info('Successfully loaded Twitter data.')
+		logging.info('Successfully extracted Twitter data.')
 	except Exception as err:
 		logging.error(err)
+		
 if __name__ == '__main__':
 	main()
