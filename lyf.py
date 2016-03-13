@@ -6,6 +6,7 @@ import requests
 import argparse
 import httplib2
 import tweepy
+import re
 
 from ConfigParser import ConfigParser	#	Used for reading the config file
 from apiclient.discovery import build	# Builds Google API service
@@ -18,15 +19,34 @@ SCRIPT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 CONFIG = os.path.join(SCRIPT_DIR, 'config.ini')
 
 # Class for youtube videos
-class VideoYT():
+class YT_Video():
 	def __init__(self, id, name, publish_date, channel, views=0, likes=0, dislikes=0): # Initialiser
 		self.id = id
 		self.name = name
-		self.publish_date = publish_date
+		self.publish_date = parse(publish_date)
 		self.channel = channel
 		self.views = int(views)
 		self.likes = int(likes)
 		self.dislikes = int(dislikes)
+
+# Class for MailChimp subscriber lists
+class MC_List():
+	def __init__(self, id, name, created_date, subscribe_url='', member_count=0, \
+		unsubscribe_count=0, cleaned_count=0, campaign_count=0, open_rate=0, click_rate=0, \
+		avg_sub_rate=0, last_campaign=None, last_subscriber=None): # Initialiser
+		
+		self.id = id
+		self.name = name
+		self.created_date = parse(created_date)
+		self.subscribe_url = subscribe_url
+		self.member_count = int(member_count)
+		self.unsubscribe_count = int(unsubscribe_count)
+		self.cleaned_count = int(cleaned_count)
+		self.campaign_count = int(campaign_count)
+		self.open_rate = float(open_rate)
+		self.avg_sub_rate = float(avg_sub_rate)
+		self.last_campaign = parse(last_campaign)
+		self.last_subscriber = parse(last_subscriber)
 
 # Gets a configuration value from a section and parameter name
 def get_config(section, param):
@@ -134,12 +154,12 @@ def my_yt_videos():
 		for item in video_response.get('items', []):
 			id = item['id']
 			title = item['snippet']['title']
-			publish_date = parse(item['snippet']['publishedAt'])
+			publish_date = item['snippet']['publishedAt']
 			channel = item['snippet']['channelTitle']
 			views = item['statistics']['viewCount']
 			likes = item['statistics']['likeCount']
 			dislikes = item['statistics']['dislikeCount']
-			video = VideoYT(id, title, publish_date, channel, views, likes, dislikes)
+			video = YT_Video(id, title, publish_date, channel, views, likes, dislikes)
 			videos.append(video)
 			
 		if (results.has_key('nextPageToken')):
@@ -150,6 +170,26 @@ def my_yt_videos():
 	videos = video_search(youtube, False)
 	for video in videos:
 		print(video.id, video.name, video.views)
+
+# Get MailChimp subscriber lists
+def get_mc_lists():
+	user = get_config('MAILCHIMP', 'User')	
+	api_key = get_config('MAILCHIMP', 'API_Key')
+	dc = re.search('-(.*?)$', api_key).group(1)
+	url = 'https://%s.api.mailchimp.com/3.0/lists' % dc
 	
+	r = requests.get(url, auth=(user, api_key))
+	r.raise_for_status()
+	results = r.json()
+	
+	lists = []
+	for list in results['lists']:
+		new_list = MC_List(list['id'], list['name'], list['date_created'], list['subscribe_url_short'], \
+			list['stats']['member_count'], list['stats']['unsubscribe_count'], list['stats']['cleaned_count'], \
+			list['stats']['campaign_count'], list['stats']['open_rate'], list['stats']['click_rate'], \
+			list['stats']['avg_sub_rate'], list['stats']['campaign_last_sent'], list['stats']['last_sub_date'] \
+		)
+		lists.append(new_list)
 		
-		
+	return(lists)
+
