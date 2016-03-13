@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # LYF data integration function library
 
-import sys, os
+import sys, os, logging
 import requests
 import argparse
 import httplib2
@@ -18,6 +18,12 @@ from dateutil.parser import parse	# Date parser
 
 SCRIPT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 CONFIG = os.path.join(SCRIPT_DIR, 'config.ini')
+
+# Set up log file
+global LOG_FORMAT, LOG_FILE
+LOG_FORMAT = '%(levelname)s: %(asctime)s [%(filename)s (%(funcName)s - Line %(lineno)s)]: %(message)s'
+LOG_FILE = os.path.join(SCRIPT_DIR, 'integration.log')
+logging.basicConfig(filename=LOG_FILE,level=logging.INFO, format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
 
 # Class for youtube videos
 class YT_Video():
