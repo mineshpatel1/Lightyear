@@ -6,6 +6,7 @@ import requests
 import argparse
 import httplib2
 import tweepy
+import MySQLdb
 import re
 
 from ConfigParser import ConfigParser	#	Used for reading the config file
@@ -193,3 +194,38 @@ def get_mc_lists():
 		
 	return(lists)
 
+# MySQL database connection
+def mysql_conn():
+	mysql_user = get_config('MYSQL', 'Username')
+	mysql_pw = get_config('MYSQL', 'Password')
+	mysql_host = get_config('MYSQL', 'Hostname')
+	mysql_db = get_config('MYSQL', 'Database')
+	
+	conn = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pw, db=mysql_db)
+	return(conn)
+	
+# Insert row into table, updating on duplicate keys
+def merge_into_table(db, table, row, keys):
+	sql = 'INSERT INTO %s (\n' % table
+	
+	sql += ','.join(row.keys())
+	sql += '\n) VALUES (\n'
+	
+	insert_values = []
+	for col in row:
+		insert_values.append("'%s'" % str(row[col]).replace("'","''"))
+	sql += ','.join(insert_values)
+	
+	sql += ') ON DUPLICATE KEY UPDATE \n'
+	
+	update_values = []
+	for col in row:
+		if (col not in keys):
+			update = '%s=%s' % (col, "'%s'" % str(row[col]).replace("'","''"))
+			update_values.append(update)
+			
+	sql += ','.join(update_values)
+	sql += ';'
+	
+	db.query(sql)
+	db.commit()
