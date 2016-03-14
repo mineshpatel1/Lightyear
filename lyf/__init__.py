@@ -6,7 +6,6 @@ import requests
 import argparse
 import httplib2
 import tweepy
-import MySQLdb
 import re
 
 from ConfigParser import ConfigParser	#	Used for reading the config file
@@ -31,6 +30,9 @@ logging.getLogger("tweepy").setLevel(logging.CRITICAL)
 logging.getLogger("discovery").setLevel(logging.CRITICAL)
 logging.getLogger("googleapiclient").setLevel(logging.CRITICAL)
 logging.getLogger("oauth2client").setLevel(logging.CRITICAL)
+
+# Define modules in the package
+__all__ = ["sql"]
 
 # Class for youtube videos
 class YT_Video():
@@ -125,12 +127,21 @@ def fb_query(fields):
 	return(r.json())
 
 # Query Google Analytics API to retrieve some data
-def ga_query(service, start_date, end_date, metrics):
-	return service.data().ga().get(
-		ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
-		start_date=start_date,
-		end_date=start_date,
-		metrics=metrics).execute()
+def ga_query(service, start_date, end_date, metrics, dimensions=None):
+	if dimensions is None:
+		results = service.data().ga().get(
+			ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+			start_date=start_date,
+			end_date=end_date,
+			metrics=metrics).execute()
+	else:
+		results = service.data().ga().get(
+			ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+			start_date=start_date,
+			end_date=end_date,
+			metrics=metrics,
+			dimensions=dimensions).execute()
+	return(results)
 
 # Get all youtube videos belonging to the configured YouTube channel
 def my_yt_videos():
@@ -206,38 +217,3 @@ def get_mc_lists():
 		
 	return(lists)
 
-# MySQL database connection
-def mysql_conn():
-	mysql_user = get_config('MYSQL', 'Username')
-	mysql_pw = get_config('MYSQL', 'Password')
-	mysql_host = get_config('MYSQL', 'Hostname')
-	mysql_db = get_config('MYSQL', 'Database')
-	
-	conn = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pw, db=mysql_db)
-	return(conn)
-	
-# Insert row into table, updating on duplicate keys
-def merge_into_table(db, table, row, keys):
-	sql = 'INSERT INTO %s (\n' % table
-	
-	sql += ','.join(row.keys())
-	sql += '\n) VALUES (\n'
-	
-	insert_values = []
-	for col in row:
-		insert_values.append("'%s'" % str(row[col]).replace("'","''"))
-	sql += ','.join(insert_values)
-	
-	sql += ') ON DUPLICATE KEY UPDATE \n'
-	
-	update_values = []
-	for col in row:
-		if (col not in keys):
-			update = '%s=%s' % (col, "'%s'" % str(row[col]).replace("'","''"))
-			update_values.append(update)
-			
-	sql += ','.join(update_values)
-	sql += ';'
-	
-	db.query(sql)
-	db.commit()

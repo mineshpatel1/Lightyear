@@ -22,7 +22,7 @@ def print_results(results):
 def main():
 	# Authenticate and construct service as read only
 	service = lyf.google_api('analytics', 'v3', ['https://www.googleapis.com/auth/analytics.readonly'])
-	results = lyf.ga_query(service, '2016-02-01', '2016-03-01', 'ga:sessions,ga:avgSessionDuration')
+	results = lyf.ga_query(service, '2013-02-01', '2013-02-28', 'ga:sessions,ga:avgSessionDuration')
 	print_results(results)
 
 if __name__ == '__main__':

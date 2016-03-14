@@ -1,17 +1,17 @@
 #!/usr/bin/python
-
-# Extract data from YouTube
+# YouTube - Extract fact - Daily
 
 import lyf, logging
 import requests
 
+from lyf import *
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
 
 def main():
 	try:
 		videos = lyf.my_yt_videos()
-		db = lyf.mysql_conn()
+		db = sql.connect()
 		for video in videos:
 			rec = {}
 			rec['date_id'] = date.today().strftime('%Y%m%d')
@@ -40,7 +40,7 @@ def main():
 				rec['likes'] = 0
 				rec['dislikes'] = 0
 			
-			lyf.merge_into_table(db, 'f_youtube_day', rec, ['date_id', 'video_id'])
+			sql.merge_into_table(db, 'f_youtube_day', rec, ['date_id', 'video_id'])
 		
 		db.close()
 		logging.info('Successfully extracted YouTube data.')

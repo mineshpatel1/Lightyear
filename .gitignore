@@ -2,3 +2,4 @@ config.ini
 google-api.json
 *.pyc
 *.bak
+*.log
