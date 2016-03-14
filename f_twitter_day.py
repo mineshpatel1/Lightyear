@@ -27,7 +27,7 @@ def main():
 		db = sql.connect()
 		db.query("select * from f_twitter_day where date_id = '%s'" % yesterday)
 		result = db.store_result()
-		result = result.fetch_row(how=1)
+		result = result.fetch_row(how=1)[0]
 		
 		if (len(result) > 0):
 			twitter_rec['followers'] = int(twitter_rec['total_followers']) - int(result['total_followers'])

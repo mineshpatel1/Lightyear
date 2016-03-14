@@ -21,7 +21,8 @@ def merge_into_table(db, table, row, keys):
 
 	# UTF-8 encode all rows
 	for col in row:
-		row[col] = row[col].encode('utf-8')
+		if type(row[col]) is str:
+			row[col] = row[col].encode('utf-8')
 	
 	sql = 'INSERT INTO %s (\n' % table
 	
