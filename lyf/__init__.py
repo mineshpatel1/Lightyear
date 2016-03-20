@@ -15,6 +15,7 @@ from oauth2client import client, file, tools	# Functions for OAuth2
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
 
+global SCRIPT_DIR
 SCRIPT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 CONFIG = os.path.join(SCRIPT_DIR, 'config.ini')
 

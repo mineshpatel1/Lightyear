@@ -4,6 +4,7 @@
 import lyf
 import argparse
 import csv
+import os
 
 from lyf import *
 from datetime import date, timedelta, datetime	# Date time
@@ -16,9 +17,11 @@ args = parser.parse_args()
 FULL_MODE = args.full
 
 def main():
+	file = os.path.join(lyf.SCRIPT_DIR, lyf.get_config('ETL', 'GA_Dims'))
+	
 	# Read TSV file, looping through dimensions
 	i = 0
-	with open(lyf.get_config('ETL', 'GA_Dims'), 'r') as f:
+	with open(file, 'r') as f:
 		f = csv.reader(f, delimiter='\t')
 		for row in f:
 			if (i > 0):
