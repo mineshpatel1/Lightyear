@@ -27,7 +27,7 @@ def merge_into_table(db, table, row, keys):
 		if type(row[col]) is unicode:
 			row[col] = row[col].encode('utf-8')
 	
-	sql = 'INSERT INTO %s (\n' % table
+	sql = 'INSERT IGNORE INTO %s (\n' % table
 	
 	sql += ','.join(row.keys())
 	sql += '\n) VALUES (\n'
