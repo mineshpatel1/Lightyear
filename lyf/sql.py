@@ -4,6 +4,7 @@
 import lyf, logging
 import MySQLdb
 import codecs
+import re
 
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
@@ -21,7 +22,6 @@ def connect():
 
 # Insert row into table, updating on duplicate keys
 def merge_into_table(db, table, row, keys):
-
 	# UTF-8 encode all rows
 	for col in row:
 		if type(row[col]) is unicode:
@@ -65,7 +65,15 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 		db = connect() # Connect to DB
 
 		if full_mode:
-			truncate(db, table)
+			truncate(db, table) # Truncate table
+			
+			# Insert 0 row
+			primary_key = re.search('d_ga_(.*?)$', table).group(1)
+			primary_key += '_id'
+			sql = 'INSERT INTO %s (%s) VALUES (-1);' % (table, primary_key)
+			db.query(sql)
+			db.commit()
+			
 			start_date = lyf.get_config('ETL', 'Extract_Date')
 		else:
 			start_date = end_date
