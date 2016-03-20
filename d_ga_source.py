@@ -15,15 +15,6 @@ parser.add_argument("-f", "--full", action='store_true', default=False, help="Sp
 args = parser.parse_args()
 FULL_MODE = args.full
 
-def print_results(results):
-	# Print data nicely for the user.
-	if results:
-		print 'View (Profile): %s' % results.get('profileInfo').get('profileName')
-		print 'Total Sessions: %s' % results.get('rows')[0][0]
-		print 'Average Session Duration %s' % results.get('rows')[0][1]
-	else:
-		print 'No results found'
-
 def main():
 	try:
 		db = sql.connect() # Connect to DB
