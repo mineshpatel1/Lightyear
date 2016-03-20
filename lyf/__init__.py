@@ -216,4 +216,3 @@ def get_mc_lists():
 		lists.append(new_list)
 		
 	return(lists)
-

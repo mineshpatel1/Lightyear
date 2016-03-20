@@ -1,0 +1,1 @@
+table	ga_dims	columns	keysd_ga_source	"ga:source,ga:medium,ga:socialNetwork"	"source,medium,social_network"	"source,medium"d_ga_platform	"ga:operatingSystem,ga:deviceCategory,ga:operatingSystemVersion"	"os,device_category,os_version"	"os,device_category,os_version"
