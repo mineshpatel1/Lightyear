@@ -5,6 +5,9 @@ import lyf, logging
 import MySQLdb
 import codecs
 
+from datetime import date, timedelta, datetime	# Date time
+from dateutil.parser import parse	# Date parser
+
 # MySQL database connection
 def connect():
 	mysql_user = lyf.get_config('MYSQL', 'Username')
@@ -21,10 +24,10 @@ def merge_into_table(db, table, row, keys):
 
 	# UTF-8 encode all rows
 	for col in row:
-		if type(row[col]) is str:
+		if type(row[col]) is unicode:
 			row[col] = row[col].encode('utf-8')
 	
-	sql = 'INSERT INTO %s (\n' % table
+	sql = 'INSERT IGNORE INTO %s (\n' % table
 	
 	sql += ','.join(row.keys())
 	sql += '\n) VALUES (\n'
@@ -33,16 +36,18 @@ def merge_into_table(db, table, row, keys):
 	for col in row:
 		insert_values.append("'%s'" % str(row[col]).replace("'","''"))
 	sql += ','.join(insert_values)
+	sql += ')'
 	
-	sql += ') ON DUPLICATE KEY UPDATE \n'
+	if (len(keys) != len(row)):
+		sql += ' ON DUPLICATE KEY UPDATE \n'
 	
-	update_values = []
-	for col in row:
-		if (col not in keys):
-			update = '%s=%s' % (col, "'%s'" % str(row[col]).replace("'","''"))
-			update_values.append(update)
+		update_values = []
+		for col in row:
+			if (col not in keys):
+				update = '%s=%s' % (col, "'%s'" % str(row[col]).replace("'","''"))
+				update_values.append(update)
 			
-	sql += ','.join(update_values)
+		sql += ','.join(update_values)
 	sql += ';'
 	
 	db.query(sql)
@@ -58,31 +63,35 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 	try:
 		end_date = date.today().strftime('%Y-%m-%d') # Fetch up to today
 		db = connect() # Connect to DB
-		
+	
 		if full_mode:
-			sql.truncate(db, table, ga_dims)
+			truncate(db, table)
 			start_date = lyf.get_config('ETL', 'Extract_Date')
 		else:
 			start_date = end_date
-	
+
 		# Connect to Google Analytics
 		service = lyf.google_api('analytics', 'v3', ['https://www.googleapis.com/auth/analytics.readonly'])
 		metrics = 'ga:sessions'
-		dims = ga_dims
+		dims = ','.join(ga_dims)
 		results = lyf.ga_query(service, start_date, end_date, metrics, dims)
-	
+
 		# Check if there are rows
 		if results.has_key('rows'):
 			for row in results['rows']:
 				rec = {}
 				i = 0
 				for key in columns:
-					rec[columns[key]] = row[i]
+					rec[key] = row[i]
 					i += 1
-				print(rec, keys)
-				# sql.merge_into_table(db, table, rec, keys)
-	
+				merge_into_table(db, table, rec, keys)
+
 		db.close()
-		logging.info('Successfully loaded %s from %s to %s.' % (table, start_date, end_date))
+	
+		if full_mode:
+			mode = 'Full'
+		else:
+			mode = 'Incremental'
+		logging.info('Successfully merged %s rows into %s (%s).' % (len(results['rows']), table, mode))
 	except Exception as err:
 		logging.error(err)

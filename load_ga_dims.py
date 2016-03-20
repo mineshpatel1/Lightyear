@@ -2,14 +2,20 @@
 
 # Load Google Analytics dimensions based on TSV file
 import lyf
+import argparse
 import csv
 
 from lyf import *
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
 
-def main():
+parser = argparse.ArgumentParser(description="Extract Google Analytics Dimensions")
+parser.add_argument("-f", "--full", action='store_true', default=False, help="Specifies full mode for extract as opposed to incremental.")
 
+args = parser.parse_args()
+FULL_MODE = args.full
+
+def main():
 	# Read TSV file, looping through dimensions
 	i = 0
 	with open(lyf.get_config('ETL', 'GA_Dims'), 'r') as f:
@@ -20,7 +26,7 @@ def main():
 				ga_dims = row[1].split(',')
 				columns = row[2].split(',')
 				keys = row[3].split(',')
-				sql.load_ga_dim(False, table, ga_dims, columns, keys)
+				sql.load_ga_dim(FULL_MODE, table, ga_dims, columns, keys)
 			i += 1
 			
 if __name__ == '__main__':
