@@ -27,7 +27,7 @@ def merge_into_table(db, table, row, keys):
 		if type(row[col]) is unicode:
 			row[col] = row[col].encode('utf-8')
 	
-	sql = 'INSERT IGNORE INTO %s (\n' % table
+	sql = 'INSERT INTO %s (\n' % table
 	
 	sql += ','.join(row.keys())
 	sql += '\n) VALUES (\n'
@@ -63,7 +63,7 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 	try:
 		end_date = date.today().strftime('%Y-%m-%d') # Fetch up to today
 		db = connect() # Connect to DB
-	
+
 		if full_mode:
 			truncate(db, table)
 			start_date = lyf.get_config('ETL', 'Extract_Date')
@@ -76,22 +76,20 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 		dims = ','.join(ga_dims)
 		results = lyf.ga_query(service, start_date, end_date, metrics, dims)
 
-		# Check if there are rows
-		if results.has_key('rows'):
-			for row in results['rows']:
-				rec = {}
-				i = 0
-				for key in columns:
-					rec[key] = row[i]
-					i += 1
-				merge_into_table(db, table, rec, keys)
+		for row in results:
+			rec = {}
+			i = 0
+			for key in columns:
+				rec[key] = row[i]
+				i += 1
+			merge_into_table(db, table, rec, keys)
 
 		db.close()
-	
+
 		if full_mode:
 			mode = 'Full'
 		else:
 			mode = 'Incremental'
-		logging.info('Successfully merged %s rows into %s (%s).' % (len(results['rows']), table, mode))
+		logging.info('Successfully merged %s rows into %s (%s).' % (len(results), table, mode))
 	except Exception as err:
 		logging.error(err)
