@@ -43,7 +43,7 @@ def main():
 			sql.merge_into_table(db, 'f_youtube_day', rec, ['date_id', 'video_id'])
 
 		db.close()
-		logging.info('Successfully extracted YouTube data.')
+		logging.info('Successfully merged %s rows into f_youtube_day (Daily).' % len(videos))
 		
 	except Exception as err:
 		logging.error(err)

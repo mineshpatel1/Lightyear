@@ -41,7 +41,7 @@ def main():
 		sql.merge_into_table(db, 'f_twitter_day', twitter_rec, ['date_id'])
 		db.close()
 		
-		logging.info('Successfully extracted Twitter data.')
+		logging.info('Successfully merged 1 row into f_twitter day (Daily).')
 	except Exception as err:
 		logging.error(err)
 		
