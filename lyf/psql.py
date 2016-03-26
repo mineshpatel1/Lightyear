@@ -90,7 +90,8 @@ class DB():
 					for val in row:
 						rec[columns[j]] = val
 						j += 1
-					self.insert(qualify_schema(table), rec)
+					if (len(rec) > 0):
+						self.insert(qualify_schema(table), rec)
 				i += 1
 	
 	# Query and retrieve the records
