@@ -25,29 +25,26 @@ def main():
 			rec['total_likes'] = video.likes
 			rec['total_dislikes'] = video.dislikes
 
+			# Check for yesterday's records to derive today's followers
 			yesterday = date.today() - timedelta(days=1)
 			yesterday = int(yesterday.strftime('%Y%m%d'))
 
-			db.query("select * from lyf.f_youtube_daily where date_id = %s and video_id = %s", [yesterday, video.id])
-
-			# Check for yesterday's records to derive today's followers
-			# db.query("select * from f_youtube_day where date_id = '%s' and video_id = '%s'" % (yesterday, video.id))
-			# result = db.store_result()
-			# result = result.fetch_row(how=1)
+			results = db.query("select * from lyf.f_youtube_daily where date_id = %s and video_id = %s", [yesterday, video.id])
+			
+			if (len(results) > 0):
+				print(results)
+				rec['views'] = int(video.views) - int(results[0]['total_views'])
+				rec['likes'] = int(video.likes) - int(results[0]['total_likes'])
+				rec['dislikes'] = int(video.likes) - int(results[0]['total_likes'])
+			else:
+				rec['views'] = 0
+				rec['likes'] = 0
+				rec['dislikes'] = 0
+				
+			inserts += db.upsert('f_youtube_daily', rec, ['date_id', 'video_id'])
 		
-			# if (len(result) > 0):
-			#	rec['views'] = int(video.views) - int(result[0]['total_views'])
-			#	rec['likes'] = int(video.likes) - int(result[0]['total_likes'])
-			#	rec['dislikes'] = int(video.likes) - int(result[0]['total_likes'])
-			# else:
-			#	rec['views'] = 0
-			#	rec['likes'] = 0
-			#	rec['dislikes'] = 0
-	
-			# inserts += db.upsert('f_youtube_daily', rec, ['date_id', 'video_id'])
-
-		logging.info('Merged %s/%s rows into f_youtube_day (Daily).' % (inserts, len(videos)))
 		db.close()
+		logging.info('Merged %s/%s rows into f_youtube_daily.' % (inserts, len(videos)))
 	
 	except Exception as err:
 		logging.error(err)

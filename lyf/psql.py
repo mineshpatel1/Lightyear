@@ -5,6 +5,7 @@ import lyf, logging
 import psycopg2
 import codecs
 import re
+import csv
 
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
@@ -75,12 +76,37 @@ class DB():
 		status = self.execute(sql, all_vals)
 		return(status)
 	
+	# Load CSV file into table, gets column names from CSV header
+	def load_csv(self, table, csv_file):
+		with open(csv_file, 'rb') as file:
+			reader = csv.reader(file)
+			i = 0
+			for row in reader:
+				if i == 0:
+					columns = row
+				else:
+					rec = {}
+					j = 0
+					for val in row:
+						rec[columns[j]] = val
+						j += 1
+					self.insert(qualify_schema(table), rec)
+				i += 1
+	
 	# Query and retrieve the records
 	def query(self, sql, vals=[]):
-		print(sql)
-		print(vals)
-		self.cursor.execute(sql, vals)
-		print(self.cursor.fetchall())
+		results = []
+		self.execute(sql, vals)
+		columns = [desc.name for desc in self.cursor.description]
+		
+		# Loop through results
+		for result in self.cursor.fetchall():
+			rec = {}
+			for x in xrange(len(result)):
+				rec[columns[x]] = result[x]
+			results.append(rec)
+		
+		return(results)
 	
 	# Close the cursor and connection. Commit by default
 	def close(self, commit=True):

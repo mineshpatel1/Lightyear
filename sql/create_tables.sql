@@ -1,5 +1,5 @@
 -- Date dimension
-DROP TABLE lyf.d_date;
+DROP TABLE IF EXISTS lyf.d_date;
 CREATE TABLE lyf.d_date AS (
 	SELECT
 		datum AS DATE,
@@ -39,7 +39,7 @@ CREATE TABLE lyf.d_date AS (
 );
 
 -- Time dimension
-DROP TABLE lyf.d_time;
+DROP TABLE IF EXISTS lyf.d_time;
 CREATE TABLE lyf.d_time AS (
 	SELECT to_char(MINUTE, 'hh24:mi') AS time_of_day,
 		-- Hour of the day (0 - 23)
@@ -73,7 +73,7 @@ CREATE TABLE lyf.d_time AS (
 );
 
 -- Twitter fact - Daily snapshot
-DROP TABLE lyf.f_twitter_daily;
+DROP TABLE IF EXISTS lyf.f_twitter_daily;
 CREATE TABLE IF NOT EXISTS lyf.f_twitter_daily (
 	date_id INTEGER NOT NULL,
 	total_followers INTEGER,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS lyf.f_twitter_daily (
 );
 
 -- Youtube fact - Daily snapshot
-DROP TABLE lyf.f_youtube_daily;
+DROP TABLE IF EXISTS lyf.f_youtube_daily;
 CREATE TABLE lyf.f_youtube_daily (
 	date_id INT NOT NULL,
 	video_id VARCHAR(20) NOT NULL,
