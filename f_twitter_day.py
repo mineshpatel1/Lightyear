@@ -4,7 +4,7 @@
 import lyf, logging
 import os
 
-from lyf import *
+from lyf import psql
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
 
@@ -38,7 +38,8 @@ def main():
 			twitter_rec['following'] = 0
 			twitter_rec['tweets'] = 0
 		
-		sql.merge_into_table(db, 'f_twitter_day', twitter_rec, ['date_id'])
+		
+		# mysql.merge_into_table(db, 'f_twitter_day', twitter_rec, ['date_id'])
 		db.close()
 		
 		logging.info('Successfully merged 1 row into f_twitter day (Daily).')

@@ -25,6 +25,8 @@ LOG_FORMAT = '%(levelname)s: %(asctime)s [%(filename)s (%(funcName)s - Line %(li
 LOG_FILE = os.path.join(SCRIPT_DIR, 'logs', 'out.log')
 logging.basicConfig(filename=LOG_FILE,level=logging.INFO, format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
 
+logging.getLogger().addHandler(logging.StreamHandler()) # Print to stderr
+
 # Suppress sub module messages
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("tweepy").setLevel(logging.CRITICAL)
