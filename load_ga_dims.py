@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # Load Google Analytics dimensions based on TSV file
-import lyf
+import lyf, logging
 import argparse
 import csv
 import os
@@ -21,6 +21,21 @@ def main():
 	
 	# Read TSV file, looping through dimensions
 	i = 0
+	
+	if FULL_MODE:
+		try:
+			db = psql.DB()
+			
+			# Reload country table
+			countries_file = os.path.join(lyf.SCRIPT_DIR, 'data', 'countries.csv')
+			db.truncate('d_country')
+			db.reset_seq('d_country', 'country_id')
+			db.load_csv('d_country', countries_file)
+			db.close()
+			logging.info('Reloaded d_country table.')
+		except Exception as err:
+			logging.error(err)
+	
 	with open(file, 'r') as f:
 		f = csv.reader(f, delimiter='\t')
 		for row in f:

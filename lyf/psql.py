@@ -73,6 +73,11 @@ class DB():
 		status = self.execute(sql, all_vals)
 		return(status)
 	
+	# Resets a primary key serial back 1
+	def reset_seq(self, table, primary_key):
+		seq = '%s_%s_seq' % (qualify_schema(table), primary_key)
+		self.execute('ALTER SEQUENCE %s RESTART WITH 1;' % seq)
+	
 	# Load CSV file into table, gets column names from CSV header
 	def load_csv(self, table, csv_file):
 		with open(csv_file, 'rb') as file:
@@ -85,6 +90,8 @@ class DB():
 					rec = {}
 					j = 0
 					for val in row:
+						if (val == ''):
+							val = None
 						rec[columns[j]] = val
 						j += 1
 					if (len(rec) > 0):
@@ -133,8 +140,7 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 			primary_key += '_id'
 			rec = {primary_key : -1}
 
-			seq = '%s_%s_seq' % (qualify_schema(table), primary_key)
-			db.execute('ALTER SEQUENCE %s RESTART WITH 1;' % seq)
+			db.reset_seq(table, primary_key)
 
 			db.insert(table, rec)
 			db.conn.commit()

@@ -102,14 +102,28 @@ CREATE TABLE lyf.f_youtube_daily (
 	PRIMARY KEY (date_id, video_id)
 );
 
+-- Generic Country table
+DROP TABLE IF EXISTS lyf.d_country;
+CREATE TABLE lyf.d_country
+(
+	country_id serial NOT NULL,
+	country_code VARCHAR(2),
+	country VARCHAR(50) NOT NULL DEFAULT 'Unknown',
+	lat FLOAT,
+	lon FLOAT,
+	size INTEGER,
+	PRIMARY KEY (country_code)
+);
+-- Load from data/countries.csv
+
 -- Google Analytics Dimensions
 -- Source
 DROP TABLE IF EXISTS lyf.d_ga_source;
 CREATE TABLE lyf.d_ga_source (
 	source_id SERIAL,
-	source VARCHAR(100) NOT NULL DEFAULT 'None',
-	medium VARCHAR(20) NOT NULL DEFAULT 'None',
-	social_network VARCHAR(20) NULL DEFAULT 'None',
+	source VARCHAR(100) NOT NULL DEFAULT 'Unknown',
+	medium VARCHAR(20) NOT NULL DEFAULT 'Unknown',
+	social_network VARCHAR(20) NULL DEFAULT 'Unknown',
 	PRIMARY KEY (source, medium)
 );
 
@@ -117,23 +131,24 @@ CREATE TABLE lyf.d_ga_source (
 DROP TABLE IF EXISTS lyf.d_ga_platform;
 CREATE TABLE lyf.d_ga_platform (
   platform_id SERIAL,
-  browser VARCHAR(20) NOT NULL DEFAULT 'None',
-  os VARCHAR(20) NOT NULL DEFAULT 'None',
-  os_version VARCHAR(20) NOT NULL DEFAULT 'None',
-  device_category VARCHAR(20) NOT NULL DEFAULT 'None',
+  browser VARCHAR(20) NOT NULL DEFAULT 'Unknown',
+  os VARCHAR(20) NOT NULL DEFAULT 'Unknown',
+  os_version VARCHAR(20) NOT NULL DEFAULT 'Unknown',
+  device_category VARCHAR(20) NOT NULL DEFAULT 'Unknown',
   PRIMARY KEY (browser, os, os_version, device_category)
-)
+);
 
 -- Geography
 DROP TABLE IF EXISTS lyf.d_ga_geo;
 CREATE TABLE lyf.d_ga_geo (
 	geo_id SERIAL,
-	continent VARCHAR(20) NULL,
-	sub_continent VARCHAR(40) NULL,
-	country VARCHAR(40) NULL,
-	region VARCHAR(45) NOT NULL DEFAULT 'None',
-	city VARCHAR(45) NOT NULL DEFAULT 'None',
-	latitude FLOAT NOT NULL DEFAULT 0.0000,
-	longitude FLOAT NOT NULL DEFAULT 0.0000,
+	continent VARCHAR(20) NULL DEFAULT 'Unknown',
+	sub_continent VARCHAR(40) NULL DEFAULT 'Unknown',
+	country VARCHAR(40) NULL DEFAULT 'Unknown', 
+	country_code VARCHAR(2) NULL,
+	region VARCHAR(45) NOT NULL DEFAULT 'Unknown',
+	city VARCHAR(45) NOT NULL DEFAULT 'Unknown',
+	latitude FLOAT DEFAULT 0,
+	longitude FLOAT DEFAULT 0,
 	PRIMARY KEY (region, city, latitude, longitude)
 );
