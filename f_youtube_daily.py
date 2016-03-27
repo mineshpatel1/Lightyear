@@ -32,7 +32,6 @@ def main():
 			results = db.query("select * from lyf.f_youtube_daily where date_id = %s and video_id = %s", [yesterday, video.id])
 			
 			if (len(results) > 0):
-				print(results)
 				rec['views'] = int(video.views) - int(results[0]['total_views'])
 				rec['likes'] = int(video.likes) - int(results[0]['total_likes'])
 				rec['dislikes'] = int(video.likes) - int(results[0]['total_likes'])

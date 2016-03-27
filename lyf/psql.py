@@ -55,20 +55,17 @@ class DB():
 	# Insert or update a row to a table
 	def upsert(self, table, row, keys):
 		table = qualify_schema(table)
-		update_cols = [col for col, val in row.items() if col not in keys]
-		update_plch = [r'%s' for col, val in row.items() if col not in keys]
-		update_vals = [val for col, val in row.items() if col not in keys]
 		update_where = [col + ' = %s' for col in keys]
-		key_vals = []
+		where_vals = []
 		for key in keys:
-			key_vals.append(row[key])
+			where_vals.append(row[key])
 		
 		insert_cols = [col for col, val in row.items()]
 		insert_plch = [r'%s' for col, val in row.items()]
 		insert_vals = [val for col, val in row.items()]
-		all_vals = update_vals + key_vals + insert_vals
+		all_vals = insert_vals + where_vals + insert_vals
 	
-		sql = 'WITH upsert AS (UPDATE %s SET (%s) = (%s) ' % (table, ', '.join(update_cols), ', '.join(update_plch))
+		sql = 'WITH upsert AS (UPDATE %s SET (%s) = (%s) ' % (table, ', '.join(insert_cols), ', '.join(insert_plch))
 		sql += 'WHERE %s ' % ' AND '.join(update_where)
 		sql += 'RETURNING *) INSERT INTO %s (%s) SELECT %s ' % (table, ', '.join(insert_cols), ', '.join(insert_plch))
 		sql += 'WHERE NOT EXISTS (SELECT * FROM upsert);'
@@ -126,17 +123,21 @@ def qualify_schema(table) :
 def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 	try:
 		end_date = date.today().strftime('%Y-%m-%d') # Fetch up to today
-		db = connect() # Connect to DB
+		db = DB() # Connect to DB
 
 		if full_mode:
-			truncate(db, table) # Truncate table
-			
+			db.truncate(table) # Truncate table
+
 			# Insert 0 row
 			primary_key = re.search('d_ga_(.*?)$', table).group(1)
 			primary_key += '_id'
-			sql = 'INSERT INTO %s (%s) VALUES (-1);' % (table, primary_key)
-			db.query(sql)
-			db.commit()
+			rec = {primary_key : -1}
+
+			seq = '%s_%s_seq' % (qualify_schema(table), primary_key)
+			db.execute('ALTER SEQUENCE %s RESTART WITH 1;' % seq)
+
+			db.insert(table, rec)
+			db.conn.commit()
 			
 			start_date = lyf.get_config('ETL', 'Extract_Date')
 		else:
@@ -147,14 +148,15 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 		metrics = 'ga:sessions'
 		dims = ','.join(ga_dims)
 		results = lyf.ga_query(service, start_date, end_date, metrics, dims)
-
+		
+		inserts = 0
 		for row in results:
 			rec = {}
 			i = 0
 			for key in columns:
 				rec[key] = row[i]
 				i += 1
-			merge_into_table(db, table, rec, keys)
+			inserts += db.upsert(table, rec, keys)
 
 		db.close()
 
@@ -162,6 +164,6 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 			mode = 'Full'
 		else:
 			mode = 'Incremental'
-		logging.info('Successfully merged %s rows into %s (%s).' % (len(results), table, mode))
+		logging.info('Merged %s/%s rows into %s (%s).' % (inserts, len(results), table, mode))
 	except Exception as err:
 		logging.error(err)

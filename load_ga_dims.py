@@ -6,7 +6,7 @@ import argparse
 import csv
 import os
 
-from lyf import *
+from lyf import psql
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
 
@@ -29,7 +29,7 @@ def main():
 				ga_dims = row[1].split(',')
 				columns = row[2].split(',')
 				keys = row[3].split(',')
-				sql.load_ga_dim(FULL_MODE, table, ga_dims, columns, keys)
+				psql.load_ga_dim(FULL_MODE, table, ga_dims, columns, keys)
 			i += 1
 			
 if __name__ == '__main__':

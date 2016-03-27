@@ -101,3 +101,39 @@ CREATE TABLE lyf.f_youtube_daily (
 	channel VARCHAR(20) NULL,
 	PRIMARY KEY (date_id, video_id)
 );
+
+-- Google Analytics Dimensions
+-- Source
+DROP TABLE IF EXISTS lyf.d_ga_source;
+CREATE TABLE lyf.d_ga_source (
+	source_id SERIAL,
+	source VARCHAR(100) NOT NULL DEFAULT 'None',
+	medium VARCHAR(20) NOT NULL DEFAULT 'None',
+	social_network VARCHAR(20) NULL DEFAULT 'None',
+	PRIMARY KEY (source, medium)
+);
+
+-- Platform
+DROP TABLE IF EXISTS lyf.d_ga_platform;
+CREATE TABLE lyf.d_ga_platform (
+  platform_id SERIAL,
+  browser VARCHAR(20) NOT NULL DEFAULT 'None',
+  os VARCHAR(20) NOT NULL DEFAULT 'None',
+  os_version VARCHAR(20) NOT NULL DEFAULT 'None',
+  device_category VARCHAR(20) NOT NULL DEFAULT 'None',
+  PRIMARY KEY (browser, os, os_version, device_category)
+)
+
+-- Geography
+DROP TABLE IF EXISTS lyf.d_ga_geo;
+CREATE TABLE lyf.d_ga_geo (
+	geo_id SERIAL,
+	continent VARCHAR(20) NULL,
+	sub_continent VARCHAR(40) NULL,
+	country VARCHAR(40) NULL,
+	region VARCHAR(45) NOT NULL DEFAULT 'None',
+	city VARCHAR(45) NOT NULL DEFAULT 'None',
+	latitude FLOAT NOT NULL DEFAULT 0.0000,
+	longitude FLOAT NOT NULL DEFAULT 0.0000,
+	PRIMARY KEY (region, city, latitude, longitude)
+);
