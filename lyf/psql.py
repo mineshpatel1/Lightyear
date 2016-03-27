@@ -73,6 +73,27 @@ class DB():
 		status = self.execute(sql, all_vals)
 		return(status)
 	
+	def lookup(self, drv_table, lkp_table, drv_keys, lkp_keys, drv_update, lkp_update, only_nulls=True):
+		# Qualify column names
+		q_drv_keys = ['drv.%s' % val for val in drv_keys]
+		q_lkp_keys = ['lkp.%s' % val for val in lkp_keys]
+		q_lkp_update = ['lkp.%s' % val for val in lkp_update]
+		
+		where_clause = []
+		for i in xrange(len(q_drv_keys)):
+			where_clause.append('%s = %s' % (q_drv_keys[i], q_lkp_keys[i]))
+		
+		sql = 'UPDATE %s AS drv SET (%s) = (%s) ' % (qualify_schema(drv_table), ', '.join(drv_update), ', '.join(q_lkp_update))
+		sql += 'FROM %s AS lkp WHERE %s' % (qualify_schema(lkp_table), ' AND '.join(where_clause))
+		
+		if only_nulls:
+			null_only = ['drv.%s IS NULL' % val for val in drv_update]
+			sql += ' AND %s' % ' AND '.join(null_only)
+		
+		sql += ';'
+		status = self.execute(sql)
+		return(status)
+	
 	# Resets a primary key serial back 1
 	def reset_seq(self, table, primary_key):
 		seq = '%s_%s_seq' % (qualify_schema(table), primary_key)

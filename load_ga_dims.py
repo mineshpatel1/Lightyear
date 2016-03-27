@@ -46,6 +46,14 @@ def main():
 				keys = row[3].split(',')
 				psql.load_ga_dim(FULL_MODE, table, ga_dims, columns, keys)
 			i += 1
-			
+	
+	# Post load processing
+	
+	# Update geography dimension to lookup country codes
+	db = psql.DB()
+	db.lookup('d_ga_geo', 'd_country', ['country'], ['country'], ['country_code'], ['country_code'])
+	logging.info('Updated %s rows in d_ga_geo.' % db.cursor.rowcount)
+	db.close()
+		
 if __name__ == '__main__':
 	main()
