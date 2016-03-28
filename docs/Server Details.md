@@ -17,7 +17,7 @@ Build notes for Lightyear EC2 server built on AWS. Can use this guide to replica
 * **OS:** Amazon Linux (2015.9) : `4.1.17-22.30.amzn1.x86_64`
 * **OS User:** `lightyear`
 
-Main application is in `/u01/lightyear` and is a clone of the following [Git repository](https://github.com/mineshpatel1/lightyear).
+Main application is in `/u01/lightyear` and is a clone of the following [Git repository](https://github.com/mineshpatel1/lightyear). This directory will be referred to from now as `$APP_HOME`. The primary configuration file is `config.ini` which should be copied from `config.ini.sample` and filled in with the relevant details for your installation.
 
 # Security
 
@@ -119,6 +119,36 @@ sudo service postgresql restart
 
 Lastly, allow 5432 as an inbound port on the security group in AWS. This has already been done for security group **LYF SG**.
 
+# API Authentication
 
+## Facebook
 
+The main app uses the [Facebook Graph API](https://developers.facebook.com/docs/graph-api) to retrieve page information and insights data. There is a one-off set up to create a permenant [page access token](https://developers.facebook.com/docs/facebook-login/access-tokens#pagetokens) with `manage_pages` and `read_insights` [permissions](https://developers.facebook.com/docs/facebook-login/permissions). There are a number of valid ways of doing this, the following steps describe only one way of achieving the outcome.
+
+> These steps must be performed by an administrator of the chosen Facebook page.
+
+1. Create a Facebook app from the [developer console](https://developers.facebook.com/). This will allow us to dissociate the specific admin user from the authentication. In this example our app is called **Lightyear Data Integration**.
+
+2. From the app's main dashboard, make a note of the *App ID* and the *App Secret* (requires admin password). Fill in the respective parameters (`app_id`, `app_secret`) in the `FACEBOOK` section of `config.ini`.
+
+3. Navigate to the [Facebook Graph API Explorer](https://developers.facebook.com/tools/explorer) and select your created app from the drop down menu on the right hand side.
+
+![Graph API Explorer](images/graph-explorer-1.png)
+
+3. Use the *Get Token* button to generate a **Page Access Token**. This will allow us to default to the Facebook page profile rather than that of the user.
+
+![Create Token](images/graph-explorer-2.png)
+
+4. You will be prompted to authorise the application for basic privileges. *Before* accepting, copy the URL and add `,read_insights` to the scope argument (end of the URL) and then refresh the page.
+5. Back in the explorer, set the dropdown to be the page you wish to manage. In this example it is **Lightyear Foundation**.
+6. Copy this access token into the `FACEBOOK/access_token` parameter in `config.ini`
+7. This step will automatically retrieve a permanent version of the token from Facebook and write it to `config.ini`. On the server navigate to `$APP_HOME` and execute the following in `python`:
+
+```python
+import lyf
+lyf.renew_fb_token()
+exit()
+```
+
+8. Finally, you can use the [debugger](https://developers.facebook.com/tools/debug/accesstoken?q=) check if the token in `config.ini` has been updated correctly. The expiry date should be set to *Never*.
 

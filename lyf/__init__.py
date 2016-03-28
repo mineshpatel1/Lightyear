@@ -73,7 +73,16 @@ def get_config(section, param):
 	parser.read(CONFIG)
 	out = parser.get(section, param).replace('\\','')
 	return out
-	
+
+def write_config(section, param, value):
+	parser = ConfigParser()
+	parser = ConfigParser()
+	parser.read(CONFIG)
+	parser.set(section, param, value)
+	cfgfile = open(CONFIG,'w')
+	parser.write(cfgfile)
+	cfgfile.close()
+
 # Gets an authenticated service for a given Google API and versioin
 def google_api(api, version, scopes):
 	key_file = os.path.join(SCRIPT_DIR, get_config('GOOGLE_ANALYTICS','Key_File'))
@@ -120,8 +129,10 @@ def get_ga_profile(service):
 	return None
 
 # Query Facebook Graph API to get page information
-def fb_query(fields):
-	token = get_config('FACEBOOK', 'Access_Token')
+def fb_query(fields, token=False):
+	if not token:
+		token = get_config('FACEBOOK', 'Access_Token')
+	
 	graph_url = 'https://graph.facebook.com'
 	page_id = 'me' # Access token is for own page
 	
@@ -129,6 +140,18 @@ def fb_query(fields):
 	r.raise_for_status()
 	return(r.json())
 
+# Renew Facebook access token
+def renew_fb_token():
+	url = 'https://graph.facebook.com/v2.5/oauth/access_token?grant_type=fb_exchange_token&client_id=%s' % get_config('FACEBOOK', 'App_ID')
+	url += '&client_secret=%s&Reset&fb_exchange_token=%s' % (get_config('FACEBOOK', 'App_Secret'), get_config('FACEBOOK', 'Access_Token'))
+	
+	r = requests.get(url)
+	new_token = r.json()['access_token']
+	perm_token = fb_query('access_token', new_token)['access_token']
+
+	write_config('FACEBOOK', 'Access_Token', perm_token)
+	logging.info('New Facebook access token written to %s.' % CONFIG)
+	
 # Query Google Analytics API to retrieve some data
 def ga_query(service, start_date, end_date, metrics, dimensions=None):
 	def fetch_results(service, start_date, end_date, metrics, dimensions, results=[], start_index=1):
