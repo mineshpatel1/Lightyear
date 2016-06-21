@@ -10,7 +10,7 @@ import re
 
 from ConfigParser import ConfigParser	#	Used for reading the config file
 from apiclient.discovery import build	# Builds Google API service
-from oauth2client.service_account import ServiceAccountCredentials	# Google authenticator 
+from oauth2client.service_account import ServiceAccountCredentials	# Google authenticator
 from oauth2client import client, file, tools	# Functions for OAuth2
 from datetime import date, timedelta, datetime	# Date time
 from dateutil.parser import parse	# Date parser
@@ -53,7 +53,7 @@ class MC_List():
 	def __init__(self, id, name, created_date, subscribe_url='', member_count=0, \
 		unsubscribe_count=0, cleaned_count=0, campaign_count=0, open_rate=0, click_rate=0, \
 		avg_sub_rate=0, last_campaign=None, last_subscriber=None): # Initialiser
-		
+
 		self.id = id
 		self.name = name
 		self.created_date = parse(created_date)
@@ -97,7 +97,7 @@ def twitter_api():
 	consumer_secret = get_config('TWITTER', 'Consumer_Secret')
 	access_token = get_config('TWITTER', 'Access_Token')
 	access_token_secret = get_config('TWITTER', 'Access_Token_Secret')
-	
+
 	auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 	auth.set_access_token(access_token, access_token_secret)
 	api = tweepy.API(auth)
@@ -128,30 +128,51 @@ def get_ga_profile(service):
 
 	return None
 
+# Executes a subquery using the FB API, appending the results of multiple pages into the main array
+def fb_sub_query(orig_data, curr_data):
+	r = requests.get(curr_data['paging']['next'])
+	r.raise_for_status()
+	sub_results = r.json()
+	for datum in sub_results['data']:
+		orig_data['data'].append(datum)
+
+	if 'paging' in sub_results:
+		if 'next' in sub_results['paging']:
+			fb_sub_query(orig_data, sub_results)
+
 # Query Facebook Graph API to get page information
 def fb_query(fields, token=False):
 	if not token:
 		token = get_config('FACEBOOK', 'Access_Token')
-	
+
 	graph_url = 'https://graph.facebook.com'
 	page_id = 'me' # Access token is for own page
-	
+
 	r = requests.get('%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields))
 	r.raise_for_status()
-	return(r.json())
+
+	results = r.json()
+
+	for prop in results:
+		if isinstance(results[prop], dict):
+			if 'paging' in results[prop]:
+				if 'next' in results[prop]['paging']:
+					fb_sub_query(results[prop], results[prop])
+
+	return(results)
 
 # Renew Facebook access token
 def renew_fb_token():
 	url = 'https://graph.facebook.com/v2.5/oauth/access_token?grant_type=fb_exchange_token&client_id=%s' % get_config('FACEBOOK', 'App_ID')
 	url += '&client_secret=%s&Reset&fb_exchange_token=%s' % (get_config('FACEBOOK', 'App_Secret'), get_config('FACEBOOK', 'Access_Token'))
-	
+
 	r = requests.get(url)
 	new_token = r.json()['access_token']
 	perm_token = fb_query('access_token', new_token)['access_token']
 
 	write_config('FACEBOOK', 'Access_Token', perm_token)
 	logging.info('New Facebook access token written to %s.' % CONFIG)
-	
+
 # Query Google Analytics API to retrieve some data
 def ga_query(service, start_date, end_date, metrics, dimensions=None):
 	def fetch_results(service, start_date, end_date, metrics, dimensions, results=[], start_index=1):
@@ -176,9 +197,9 @@ def ga_query(service, start_date, end_date, metrics, dimensions=None):
 				dimensions=dimensions).execute()
 			if new_results.has_key('rows'):
 				results = results + new_results['rows']
-			
+
 		new_start_index = int(new_results['query']['start-index']) + len(new_results['rows'])
-		
+
 		if (new_results['totalResults'] >= new_start_index):
 			results = fetch_results(service, start_date, end_date, metrics, dimensions, results, new_start_index)
 			return(results)
@@ -191,7 +212,7 @@ def ga_query(service, start_date, end_date, metrics, dimensions=None):
 def my_yt_videos():
 	youtube = google_api('youtube', 'v3', ['https://www.googleapis.com/auth/youtube'])
 	max_results = 50
-	
+
 	def video_search(youtube, next_page, videos=[]):
 		if (next_page == False):
 			results = youtube.search().list(
@@ -213,12 +234,12 @@ def my_yt_videos():
 		for item in results['items']:
 			video_ids.append(item['id']['videoId'])
 		video_ids = ','.join(video_ids)
-		
+
 		video_response = youtube.videos().list(
 			id=video_ids,
     		part='snippet, statistics'
 		).execute()
-		
+
 		for item in video_response.get('items', []):
 			id = item['id']
 			title = item['snippet']['title']
@@ -229,27 +250,27 @@ def my_yt_videos():
 			dislikes = item['statistics']['dislikeCount']
 			video = YT_Video(id, title, publish_date, channel, views, likes, dislikes)
 			videos.append(video)
-			
+
 		if (results.has_key('nextPageToken')):
 			videos = video_search(youtube, results['nextPageToken'], videos)
 			return(videos)
 		else:
 			return(videos)
-	
+
 	videos = video_search(youtube, False)
 	return(videos)
 
 # Get MailChimp subscriber lists
 def get_mc_lists():
-	user = get_config('MAILCHIMP', 'User')	
+	user = get_config('MAILCHIMP', 'User')
 	api_key = get_config('MAILCHIMP', 'API_Key')
 	dc = re.search('-(.*?)$', api_key).group(1)
 	url = 'https://%s.api.mailchimp.com/3.0/lists' % dc
-	
+
 	r = requests.get(url, auth=(user, api_key))
 	r.raise_for_status()
 	results = r.json()
-	
+
 	lists = []
 	for list in results['lists']:
 		new_list = MC_List(list['id'], list['name'], list['date_created'], list['subscribe_url_short'], \
@@ -258,5 +279,5 @@ def get_mc_lists():
 			list['stats']['avg_sub_rate'], list['stats']['campaign_last_sent'], list['stats']['last_sub_date'] \
 		)
 		lists.append(new_list)
-		
+
 	return(lists)
