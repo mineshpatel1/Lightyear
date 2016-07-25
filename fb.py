@@ -22,7 +22,7 @@ def main():
 		prev_month = date.today() - timedelta(days=30)
 		prev_month = prev_month.strftime('%Y-%m-%d')
 		query += ',posts.since(%s){created_time,id,admin_creator,message}' % prev_month
-	results = fb_query(query)
+	results = lyf.fb_query(query)
 	print('Page Name: %s' % results['name'])
 	print('Likes: %s' % results['likes'])
 	print('Total Videos: %s' % len(results['videos']['data']))

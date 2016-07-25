@@ -8,7 +8,7 @@ CREATE TABLE lyf.d_date AS (
 		EXTRACT(MONTH FROM datum) AS month_num,
 		-- Localized month name
 		to_char(datum, 'Month') AS month_name,
-		to_char(datum, 'Mon') AS short_month_name, 
+		to_char(datum, 'Mon') AS short_month_name,
 		EXTRACT(DAY FROM datum) AS day_of_month,
 		EXTRACT(doy FROM datum) AS day_of_year,
 		-- Localized weekday
@@ -43,7 +43,7 @@ DROP TABLE IF EXISTS lyf.d_time;
 CREATE TABLE lyf.d_time AS (
 	SELECT to_char(MINUTE, 'hh24:mi') AS time_of_day,
 		-- Hour of the day (0 - 23)
-		EXTRACT(HOUR FROM MINUTE) AS hour, 
+		EXTRACT(HOUR FROM MINUTE) AS hour,
 		-- Extract and format quarter hours
 		to_char(MINUTE - (EXTRACT(MINUTE FROM MINUTE)::INTEGER % 15 || 'minutes')::INTERVAL, 'hh24:mi') ||
 		' – ' ||
@@ -82,6 +82,19 @@ CREATE TABLE IF NOT EXISTS lyf.f_twitter_daily (
 	followers INTEGER,
 	following INTEGER,
 	tweets INTEGER,
+	PRIMARY KEY (date_id)
+);
+
+-- Twitter fact - Daily snapshot
+DROP TABLE IF EXISTS lyf.f_facebook_daily;
+CREATE TABLE IF NOT EXISTS lyf.f_facebook_daily (
+	date_id INTEGER NOT NULL,
+	total_likes INTEGER,
+	total_posts INTEGER,
+	total_post_reactions INTEGER,
+	likes INTEGER,
+	posts INTEGER,
+	post_reactions INTEGER,
 	PRIMARY KEY (date_id)
 );
 
@@ -144,7 +157,7 @@ CREATE TABLE lyf.d_ga_geo (
 	geo_id SERIAL,
 	continent VARCHAR(20) NULL DEFAULT 'Unknown',
 	sub_continent VARCHAR(40) NULL DEFAULT 'Unknown',
-	country VARCHAR(40) NULL DEFAULT 'Unknown', 
+	country VARCHAR(40) NULL DEFAULT 'Unknown',
 	country_code VARCHAR(2) NULL,
 	region VARCHAR(45) NOT NULL DEFAULT 'Unknown',
 	city VARCHAR(45) NOT NULL DEFAULT 'Unknown',
