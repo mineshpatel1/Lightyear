@@ -66,8 +66,6 @@ def main():
 			elif col == 'page_video_views':
 				fb_rec['video_views'] = val
 
-			print '%s: %s' % (datum['title'], val)
-
 		db = psql.DB()
 		insert = db.upsert('f_facebook_daily', fb_rec, ['date_id'])
 		db.close()
