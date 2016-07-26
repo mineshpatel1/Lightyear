@@ -161,6 +161,41 @@ def fb_query(fields, token=False):
 
 	return(results)
 
+# Insights queries require read_insights privilege
+def fb_insights_query(metrics, period=False, since=False, until=False, token=False):
+	metrics = ','.join(metrics)
+
+	if not token:
+		token = get_config('FACEBOOK', 'Access_Token')
+
+	graph_url = 'https://graph.facebook.com'
+	page_id = 'me' # Access token is for own page
+
+	if period:
+		if not period in ['day', 'week', 'month', 'days_28', 'lifetime']:
+			period = False
+
+	if period:
+		url = '%s/%s/insights/%s?access_token=%s&period=%s' % (graph_url, page_id, metrics, token, period)
+		if since:
+			url += '&since=%s' % since
+		if until:
+			url += '&until=%s' % until
+		r = requests.get(url)
+	else:
+		r = requests.get('%s/%s/insights/%s?access_token=%s' % (graph_url, page_id, metrics, token))
+
+	r.raise_for_status()
+	results = r.json()
+
+	for prop in results:
+		if isinstance(results[prop], dict):
+			if 'paging' in results[prop]:
+				if 'next' in results[prop]['paging']:
+					fb_sub_query(results[prop], results[prop])
+
+	return(results)
+
 # Renew Facebook access token
 def renew_fb_token():
 	url = 'https://graph.facebook.com/v2.5/oauth/access_token?grant_type=fb_exchange_token&client_id=%s' % get_config('FACEBOOK', 'App_ID')
