@@ -85,16 +85,24 @@ CREATE TABLE IF NOT EXISTS lyf.f_twitter_daily (
 	PRIMARY KEY (date_id)
 );
 
--- Twitter fact - Daily snapshot
+-- Facebook fact - Daily snapshot
 DROP TABLE IF EXISTS lyf.f_facebook_daily;
 CREATE TABLE IF NOT EXISTS lyf.f_facebook_daily (
 	date_id INTEGER NOT NULL,
 	total_likes INTEGER,
 	total_posts INTEGER,
-	total_post_reactions INTEGER,
-	likes INTEGER,
-	posts INTEGER,
-	post_reactions INTEGER,
+	total_videos INTEGER,
+	total_video_likes INTEGER,
+	new_posts INTEGER,
+	new_videos INTEGER,
+	impressions INTEGER,
+	reach INTEGER,
+	engaged_users INTEGER,
+	new_likes INTEGER,
+	new_unlikes INTEGER,
+	video_views INTEGER,
+	page_views INTEGER,
+	post_likes INTEGER,
 	PRIMARY KEY (date_id)
 );
 
