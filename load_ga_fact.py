@@ -28,42 +28,49 @@ def check_id(val, key, query, record, db):
     return(record)
 
 def main():
-    file = os.path.join(lyf.SCRIPT_DIR, lyf.get_config('ETL', 'GA_Dims'))
-    end_date = date.today().strftime('%Y-%m-%d')
+    try:
+        file = os.path.join(lyf.SCRIPT_DIR, lyf.get_config('ETL', 'GA_Dims'))
+        end_date = date.today().strftime('%Y-%m-%d')
 
-    db = psql.DB()
+        db = psql.DB()
 
-    if FULL_MODE:
-        db.truncate('lyf.f_ga_daily')
-        start_date = lyf.get_config('ETL', 'Extract_Date')
-    else:
-        db.delete('f_ga_daily', { 'date_id' : date.today().strftime('%Y%m%d')})
-        start_date = end_date
+        if FULL_MODE:
+            db.truncate('lyf.f_ga_daily')
+            start_date = lyf.get_config('ETL', 'Extract_Date')
+        else:
+            db.delete('f_ga_daily', { 'date_id' : date.today().strftime('%Y%m%d')})
+            start_date = end_date
 
-    service = lyf.google_api('analytics', 'v3', ['https://www.googleapis.com/auth/analytics.readonly'])
-    metrics = 'ga:sessions,ga:bounces,ga:bounceRate,ga:avgSessionDuration,ga:sessionDuration,ga:pageviews,ga:timeOnPage'
-    dims = 'ga:date,ga:cityId,ga:sourceMedium,ga:pageTitle,ga:longitude,ga:latitude,ga:userType'
-    results = lyf.ga_query(service, start_date, end_date, metrics, dims)
+        service = lyf.google_api('analytics', 'v3', ['https://www.googleapis.com/auth/analytics.readonly'])
+        metrics = 'ga:sessions,ga:bounces,ga:bounceRate,ga:avgSessionDuration,ga:sessionDuration,ga:pageviews,ga:timeOnPage'
+        dims = 'ga:date,ga:cityId,ga:sourceMedium,ga:pageTitle,ga:longitude,ga:latitude,ga:userType'
+        results = lyf.ga_query(service, start_date, end_date, metrics, dims)
 
-    for row in results:
-        rec = {}
-        rec['date_id'] = row[0]
-        rec = check_id(row[1], 'geo_id', 'select geo_id from lyf.d_ga_geo where city_id = %s;', rec, db)
-        rec = check_id(row[2], 'source_id', 'select source_id from lyf.d_ga_source where source_medium = %s;', rec, db)
-        rec = check_id(row[3], 'page_id', 'select page_id from lyf.d_ga_page where page_title = %s;', rec, db)
-        rec['longitude'] = row[4]
-        rec['latitude'] = row[5]
-        rec['user_type'] = row[6]
-        rec['sessions'] = row[7]
-        rec['bounces'] = row[8]
-        rec['bounce_rate'] = row[9]
-        rec['avg_session_duration'] = row[10]
-        rec['session_duration'] = row[11]
-        rec['page_views'] = row[12]
-        rec['time_on_page'] = row[13]
+        success = 0
+        for row in results:
+            rec = {}
+            rec['date_id'] = row[0]
+            rec = check_id(row[1], 'geo_id', 'select geo_id from lyf.d_ga_geo where city_id = %s;', rec, db)
+            rec = check_id(row[2], 'source_id', 'select source_id from lyf.d_ga_source where source_medium = %s;', rec, db)
+            rec = check_id(row[3], 'page_id', 'select page_id from lyf.d_ga_page where page_title = %s;', rec, db)
+            rec['longitude'] = row[4]
+            rec['latitude'] = row[5]
+            rec['user_type'] = row[6]
+            rec['sessions'] = row[7]
+            rec['bounces'] = row[8]
+            rec['bounce_rate'] = row[9]
+            rec['avg_session_duration'] = row[10]
+            rec['session_duration'] = row[11]
+            rec['page_views'] = row[12]
+            rec['time_on_page'] = row[13]
 
-        db.insert('f_ga_daily', rec)
+            status = db.insert('f_ga_daily', rec)
+            if (status == 1):
+                success += 1
 
-    db.close()
+        logging.info('Inserted %s/%s fact records into f_ga_daily.' % (success, len(results)))
+        db.close()
+    except Exception as err:
+		logging.error(err)
 if __name__ == '__main__':
 	main()
