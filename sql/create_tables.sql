@@ -152,10 +152,10 @@ CREATE TABLE lyf.d_ga_source (
 DROP TABLE IF EXISTS lyf.d_ga_platform;
 CREATE TABLE lyf.d_ga_platform (
   platform_id SERIAL,
-  browser VARCHAR(20) NOT NULL DEFAULT 'Unknown',
-  os VARCHAR(20) NOT NULL DEFAULT 'Unknown',
-  os_version VARCHAR(20) NOT NULL DEFAULT 'Unknown',
-  device_category VARCHAR(20) NOT NULL DEFAULT 'Unknown',
+  browser VARCHAR(30) NOT NULL DEFAULT 'Unknown',
+  os VARCHAR(30) NOT NULL DEFAULT 'Unknown',
+  os_version VARCHAR(30) NOT NULL DEFAULT 'Unknown',
+  device_category VARCHAR(30) NOT NULL DEFAULT 'Unknown',
   PRIMARY KEY (browser, os, os_version, device_category)
 );
 

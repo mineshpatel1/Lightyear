@@ -18,14 +18,14 @@ FULL_MODE = args.full
 
 def main():
 	file = os.path.join(lyf.SCRIPT_DIR, lyf.get_config('ETL', 'GA_Dims'))
-	
+
 	# Read TSV file, looping through dimensions
 	i = 0
-	
+
 	if FULL_MODE:
 		try:
 			db = psql.DB()
-			
+
 			# Reload country table
 			countries_file = os.path.join(lyf.SCRIPT_DIR, 'data', 'countries.csv')
 			db.truncate('d_country')
@@ -35,25 +35,27 @@ def main():
 			logging.info('Reloaded d_country table.')
 		except Exception as err:
 			logging.error(err)
-	
+
 	with open(file, 'r') as f:
 		f = csv.reader(f, delimiter='\t')
 		for row in f:
 			if (i > 0):
-				table = row[0]
-				ga_dims = row[1].split(',')
-				columns = row[2].split(',')
-				keys = row[3].split(',')
-				psql.load_ga_dim(FULL_MODE, table, ga_dims, columns, keys)
+				if (len(row) > 0):
+					table = row[0]
+					ga_dims = row[1].split(',')
+					columns = row[2].split(',')
+					keys = row[3].split(',')
+
+					psql.load_ga_dim(FULL_MODE, table, ga_dims, columns, keys)
 			i += 1
-	
+
 	# Post load processing
-	
+
 	# Update geography dimension to lookup country codes
 	db = psql.DB()
 	db.lookup('d_ga_geo', 'd_country', ['country'], ['country'], ['country_code'], ['country_code'])
 	logging.info('Updated %s rows in d_ga_geo.' % db.cursor.rowcount)
 	db.close()
-		
+
 if __name__ == '__main__':
 	main()
