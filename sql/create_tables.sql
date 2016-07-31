@@ -173,3 +173,13 @@ CREATE TABLE lyf.d_ga_geo (
 	longitude FLOAT DEFAULT 0,
 	PRIMARY KEY (region, city, latitude, longitude)
 );
+
+-- Page
+DROP TABLE IF EXISTS lyf.d_ga_page;
+CREATE TABLE lyf.d_ga_page (
+	page_id SERIAL,
+	page_title VARCHAR NULL DEFAULT 'Unknown',
+	page_type VARCHAR(10),
+	author VARCHAR(20),
+	PRIMARY KEY (page_title)
+);

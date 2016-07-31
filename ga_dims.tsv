@@ -2,3 +2,4 @@ table	ga_dims	columns	keys
 d_ga_source	"ga:source,ga:medium,ga:socialNetwork"	"source,medium,social_network"	"source,medium"
 d_ga_platform	"ga:operatingSystem,ga:deviceCategory,ga:operatingSystemVersion"	"os,device_category,os_version"	"os,device_category,os_version"
 d_ga_geo	"ga:continent,ga:subContinent,ga:country,ga:region,ga:city,ga:longitude,ga:latitude"	"continent,sub_continent,country,region,city,longitude,latitude"	"region,city,longitude,latitude"
+d_ga_page   "ga:pageTitle"  "page_title"    "page_title"

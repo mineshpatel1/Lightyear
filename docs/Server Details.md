@@ -21,7 +21,7 @@ Main application is in `/u01/lightyear` and is a clone of the following [Git rep
 
 # Security
 
-Currently, connection can only be established from within the [Rittman Mead VPN](https://openvpn.ritt.md/?src=connect) using the key listed [above](#summary). 
+Currently, connection can only be established from within the [Rittman Mead VPN](https://openvpn.ritt.md/?src=connect) using the key listed [above](#summary).
 
 The following users have been created and granted `sudo` privileges by assigning the `wheel` group.
 
@@ -151,4 +151,3 @@ exit()
 ```
 
 8. Finally, you can use the [debugger](https://developers.facebook.com/tools/debug/accesstoken?q=) check if the token in `config.ini` has been updated correctly. The expiry date should be set to *Never*.
-
