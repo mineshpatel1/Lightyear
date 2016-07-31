@@ -76,7 +76,7 @@ def main():
 			filter_rec = { 'page_title' : row[0] }
 			status = db.update('d_ga_page', rec, filter_rec)
 			if status == 1:
-				update_pages += 1
+				updated_pages += 1
 
 		if updated_pages > 0:
 			logging.info('Updated %s page entries with Blog and Author info.' % updated_pages)
