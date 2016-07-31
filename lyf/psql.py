@@ -90,6 +90,18 @@ class DB():
 		status = self.execute(sql, all_vals)
 		return(status)
 
+	# Delete from table based on a filter
+	def delete(self, table, filter_row):
+		table = qualify_schema(table)
+		delete_where = [key + ' = %s' for key in filter_row.keys()]
+		filter_vals = [val for col, val in filter_row.items()]
+
+		sql = 'DELETE FROM %s ' % table
+		sql += 'WHERE %s;' % ' AND '.join(delete_where)
+
+		status = self.execute(sql, filter_vals)
+		return(status)
+
 	# Update columns based on a lookup of another table
 	def lookup(self, drv_table, lkp_table, drv_keys, lkp_keys, drv_update, lkp_update, only_nulls=True):
 		# Qualify column names

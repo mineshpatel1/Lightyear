@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS lyf.f_facebook_daily (
 -- Youtube fact - Daily snapshot
 DROP TABLE IF EXISTS lyf.f_youtube_daily;
 CREATE TABLE lyf.f_youtube_daily (
-	date_id INT NOT NULL,
+	date_id INTEGER NOT NULL,
 	video_id VARCHAR(20) NOT NULL,
 	title VARCHAR(255) NULL,
 	total_views INT NULL,
@@ -122,6 +122,27 @@ CREATE TABLE lyf.f_youtube_daily (
 	channel VARCHAR(20) NULL,
 	PRIMARY KEY (date_id, video_id)
 );
+
+-- Google Analytics fact - Daily snapshot
+DROP TABLE IF EXISTS lyf.f_ga_daily;
+CREATE TABLE lyf.f_ga_daily (
+	date_id INTEGER NOT NULL,
+	source_id INTEGER NOT NULL DEFAULT -1,
+	platform_id INTEGER NOT NULL DEFAULT -1,
+	geo_id INTEGER NOT NULL DEFAULT -1,
+	page_id INTEGER NOT NULL DEFAULT -1,
+	sessions INTEGER NULL,
+	bounces INTEGER NULL,
+	bounce_rate FLOAT NULL,
+	session_duration FLOAT NULL,
+	avg_session_duration FLOAT NULL,
+	page_views INTEGER NULL,
+	time_on_page FLOAT NULL,
+	user_type VARCHAR(20) NULL,
+	longitude FLOAT NULL,
+	latitude FLOAT NULL
+);
+CREATE INDEX f_ga_daily_date_idx ON lyf.f_ga_daily (date_id);
 
 -- Generic Country table
 DROP TABLE IF EXISTS lyf.d_country;
@@ -142,10 +163,11 @@ CREATE TABLE lyf.d_country
 DROP TABLE IF EXISTS lyf.d_ga_source;
 CREATE TABLE lyf.d_ga_source (
 	source_id SERIAL,
-	source VARCHAR(100) NOT NULL DEFAULT 'Unknown',
-	medium VARCHAR(20) NOT NULL DEFAULT 'Unknown',
+	source_medium VARCHAR NOT NULL DEFAULT 'Unknown',
+	source VARCHAR(100) NULL DEFAULT 'Unknown',
+	medium VARCHAR(20) NULL DEFAULT 'Unknown',
 	social_network VARCHAR(20) NULL DEFAULT 'Unknown',
-	PRIMARY KEY (source, medium)
+	PRIMARY KEY (source_medium)
 );
 
 -- Platform
@@ -168,10 +190,9 @@ CREATE TABLE lyf.d_ga_geo (
 	country VARCHAR(40) NULL DEFAULT 'Unknown',
 	country_code VARCHAR(2) NULL,
 	region VARCHAR(45) NOT NULL DEFAULT 'Unknown',
+	city_id VARCHAR(20) NOT NULL DEFAULT 'Unknown',
 	city VARCHAR(45) NOT NULL DEFAULT 'Unknown',
-	latitude FLOAT DEFAULT 0,
-	longitude FLOAT DEFAULT 0,
-	PRIMARY KEY (region, city, latitude, longitude)
+	PRIMARY KEY (city_id)
 );
 
 -- Page

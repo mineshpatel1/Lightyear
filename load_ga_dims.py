@@ -53,10 +53,6 @@ def main():
 	try:
 		db = psql.DB()
 
-		# Update geography dimension to lookup country codes from Google Analytics
-		db.lookup('d_ga_geo', 'd_country', ['country'], ['country'], ['country_code'], ['country_code'])
-		logging.info('Updated %s country codes in d_ga_geo.' % db.cursor.rowcount)
-
 		# Update the page table to apply any information about blog authors that can be found
 		end_date = date.today().strftime('%Y-%m-%d')
 		if FULL_MODE:
