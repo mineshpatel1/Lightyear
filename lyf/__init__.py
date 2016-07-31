@@ -209,38 +209,61 @@ def renew_fb_token():
 	logging.info('New Facebook access token written to %s.' % CONFIG)
 
 # Query Google Analytics API to retrieve some data
-def ga_query(service, start_date, end_date, metrics, dimensions=None):
+def ga_query(service, start_date, end_date, metrics, dimensions=None, filters=None):
 	def fetch_results(service, start_date, end_date, metrics, dimensions, results=[], start_index=1):
 		if dimensions is None:
-			new_results = service.data().ga().get(
-				ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
-				start_date=start_date,
-				end_date=end_date,
-				max_results=10000,
-				start_index=start_index,
-				metrics=metrics).execute()
-			if new_results.has_key('rows'):
-				results = results + new_results['rows']
+			if filters is None:
+				new_results = service.data().ga().get(
+					ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+					start_date=start_date,
+					end_date=end_date,
+					max_results=10000,
+					start_index=start_index,
+					metrics=metrics).execute()
+			else:
+				new_results = service.data().ga().get(
+					ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+					start_date=start_date,
+					end_date=end_date,
+					max_results=10000,
+					start_index=start_index,
+					metrics=metrics,
+					filters=filters).execute()
 		else:
-			new_results = service.data().ga().get(
-				ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
-				start_date=start_date,
-				end_date=end_date,
-				metrics=metrics,
-				max_results=10000,
-				start_index=start_index,
-				dimensions=dimensions).execute()
-			if new_results.has_key('rows'):
-				results = results + new_results['rows']
+			if filters is None:
+				new_results = service.data().ga().get(
+					ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+					start_date=start_date,
+					end_date=end_date,
+					metrics=metrics,
+					max_results=10000,
+					start_index=start_index,
+					dimensions=dimensions).execute()
+			else:
+				new_results = service.data().ga().get(
+					ids='ga:' + get_config('GOOGLE_ANALYTICS', 'Profile'),
+					start_date=start_date,
+					end_date=end_date,
+					metrics=metrics,
+					max_results=10000,
+					start_index=start_index,
+					dimensions=dimensions,
+					filters=filters).execute()
 
-		new_start_index = int(new_results['query']['start-index']) + len(new_results['rows'])
-
-		if (new_results['totalResults'] >= new_start_index):
-			results = fetch_results(service, start_date, end_date, metrics, dimensions, results, new_start_index)
-			return(results)
+		if new_results.has_key('rows'):
+			results = results + new_results['rows']
+			new_start_index = int(new_results['query']['start-index']) + len(new_results['rows'])
+			if (new_results['totalResults'] >= new_start_index):
+				results = fetch_results(service, start_date, end_date, metrics, dimensions, results, new_start_index)
+				return(results)
+			else:
+				return(results)
 		else:
-			return(results)
+			results = results + []
+
 	results = fetch_results(service, start_date, end_date, metrics, dimensions)
+	if (results is None):
+		results = []
 	return(results)
 
 # Get all youtube videos belonging to the configured YouTube channel

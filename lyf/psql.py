@@ -13,15 +13,15 @@ from dateutil.parser import parse	# Date parser
 # Class for youtube videos
 class DB():
 	# Initialiser
-	def __init__(self): 
+	def __init__(self):
 		psql_db = lyf.get_config('POSTGRESQL', 'Database')
 		psql_user = lyf.get_config('POSTGRESQL', 'Username')
 		psql_schema = lyf.get_config('POSTGRESQL', 'Default_Schema')
-		
+
 		self.conn = psycopg2.connect('dbname=%s user=%s' % (psql_db, psql_user))
 		self.cursor = self.conn.cursor()
 		self.execute("SET search_path = '%s';" % psql_schema)
-	
+
 	# Execute SQL and optionally commit or rollback. Return 1 for success, 0 for error
 	def execute(self, sql, values=[], commit=False, log=True):
 		try:
@@ -34,7 +34,7 @@ class DB():
 			if log:
 				logging.error('PSQL Error: %s' % err)
 			return(0)
-			
+
 	# Truncate table
 	def truncate(self, table):
 		sql = 'TRUNCATE TABLE %s;' % qualify_schema(table)
@@ -47,11 +47,11 @@ class DB():
 		sql += ') VALUES ('
 		sql += ', '.join(['%s' for key, val in row.items()]) # Placeholders
 		sql += ')'
-		
+
 		values = [val for key, val in row.items()]
 		status = self.execute(sql, values) # Attempt to insert the record
 		return(status)
-		
+
 	# Insert or update a row to a table
 	def upsert(self, table, row, keys):
 		table = qualify_schema(table)
@@ -59,46 +59,64 @@ class DB():
 		where_vals = []
 		for key in keys:
 			where_vals.append(row[key])
-		
+
 		insert_cols = [col for col, val in row.items()]
 		insert_plch = [r'%s' for col, val in row.items()]
 		insert_vals = [val for col, val in row.items()]
 		all_vals = insert_vals + where_vals + insert_vals
-	
+
 		sql = 'WITH upsert AS (UPDATE %s SET (%s) = (%s) ' % (table, ', '.join(insert_cols), ', '.join(insert_plch))
 		sql += 'WHERE %s ' % ' AND '.join(update_where)
 		sql += 'RETURNING *) INSERT INTO %s (%s) SELECT %s ' % (table, ', '.join(insert_cols), ', '.join(insert_plch))
 		sql += 'WHERE NOT EXISTS (SELECT * FROM upsert);'
-		
+
 		status = self.execute(sql, all_vals)
 		return(status)
-	
+
+	# Update values on a table based on a filter
+	def update(self, table, update_row, filter_row):
+		table = qualify_schema(table)
+		update_where = [key + ' = %s' for key in filter_row.keys()]
+		update_cols = [col for col, val in update_row.items()]
+		update_plch = [r'%s' for col, val in update_row.items()]
+
+		update_vals = [val for col, val in update_row.items()]
+		filter_vals = [val for col, val in filter_row.items()]
+		all_vals = update_vals + filter_vals
+
+		sql = 'UPDATE %s SET (%s) = (%s) ' % (table, ', '.join(update_cols), ', '.join(update_plch))
+		sql += 'WHERE %s;' % ' AND '.join(update_where)
+
+		status = self.execute(sql, all_vals)
+		return(status)
+
+	# Update columns based on a lookup of another table
 	def lookup(self, drv_table, lkp_table, drv_keys, lkp_keys, drv_update, lkp_update, only_nulls=True):
 		# Qualify column names
 		q_drv_keys = ['drv.%s' % val for val in drv_keys]
 		q_lkp_keys = ['lkp.%s' % val for val in lkp_keys]
 		q_lkp_update = ['lkp.%s' % val for val in lkp_update]
-		
+
 		where_clause = []
 		for i in xrange(len(q_drv_keys)):
 			where_clause.append('%s = %s' % (q_drv_keys[i], q_lkp_keys[i]))
-		
+
 		sql = 'UPDATE %s AS drv SET (%s) = (%s) ' % (qualify_schema(drv_table), ', '.join(drv_update), ', '.join(q_lkp_update))
 		sql += 'FROM %s AS lkp WHERE %s' % (qualify_schema(lkp_table), ' AND '.join(where_clause))
-		
+
 		if only_nulls:
 			null_only = ['drv.%s IS NULL' % val for val in drv_update]
 			sql += ' AND %s' % ' AND '.join(null_only)
-		
+
 		sql += ';'
 		status = self.execute(sql)
 		return(status)
-	
+
 	# Resets a primary key serial back 1
 	def reset_seq(self, table, primary_key):
 		seq = '%s_%s_seq' % (qualify_schema(table), primary_key)
 		self.execute('ALTER SEQUENCE %s RESTART WITH 1;' % seq)
-	
+
 	# Load CSV file into table, gets column names from CSV header
 	def load_csv(self, table, csv_file):
 		with open(csv_file, 'rb') as file:
@@ -118,22 +136,22 @@ class DB():
 					if (len(rec) > 0):
 						self.insert(qualify_schema(table), rec)
 				i += 1
-	
+
 	# Query and retrieve the records
 	def query(self, sql, vals=[]):
 		results = []
 		self.execute(sql, vals)
 		columns = [desc.name for desc in self.cursor.description]
-		
+
 		# Loop through results
 		for result in self.cursor.fetchall():
 			rec = {}
 			for x in xrange(len(result)):
 				rec[columns[x]] = result[x]
 			results.append(rec)
-		
+
 		return(results)
-	
+
 	# Close the cursor and connection. Commit by default
 	def close(self, commit=True):
 		if commit:
@@ -165,7 +183,7 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 
 			db.insert(table, rec)
 			db.conn.commit()
-			
+
 			start_date = lyf.get_config('ETL', 'Extract_Date')
 		else:
 			start_date = end_date
@@ -175,7 +193,7 @@ def load_ga_dim(full_mode, table, ga_dims, columns, keys):
 		metrics = 'ga:sessions'
 		dims = ','.join(ga_dims)
 		results = lyf.ga_query(service, start_date, end_date, metrics, dims)
-		
+
 		inserts = 0
 		for row in results:
 			rec = {}
