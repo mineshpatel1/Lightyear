@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html style="margin: 0; height: 100%;">
+    <head>
+        <meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <script src="/scripts/angular/angular.min.js"></script>
+        <script src="/scripts/angular-animate/angular-animate.min.js"></script>
+        <script src="/scripts/angular-aria/angular-aria.min.js"></script>
+        <script src="/scripts/angular-material/angular-material.min.js"></script>
+        <script src="/scripts/gapi.js"></script>
+        <link rel="stylesheet" href="/scripts/angular-material/angular-material.min.css">
+
+        <title>Social Media App</title>
+        <script>var app = angular.module('App', ['ngMaterial', 'ngAnimate']);</script>
+        <script src="/controllers/main-app.js"></script>
+    </head>
+	<body ng-app="App" ng-controller="main-app">
+        <md-content layout-padding>
+            <div layout="row">
+                <md-input-container>
+                    <label>Test</label>
+                    <input ng-model="test">
+                </md-input-container>
+            </div>
+            <div layout="row">
+                {{ test }}
+            </div>
+        </md-content>
+    </body>
+</html>
