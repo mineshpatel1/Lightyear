@@ -204,3 +204,51 @@ CREATE TABLE lyf.d_ga_page (
 	author VARCHAR(20),
 	PRIMARY KEY (page_title)
 );
+
+DROP TABLE IF EXISTS lyf.f_mc_lists_daily;
+CREATE TABLE lyf.f_mc_lists_daily (
+	date_id INTEGER NOT NULL,
+	list_id VARCHAR NOT NULL,
+	members INTEGER NULL,
+	unsubscribed INTEGER NULL,
+	cleaned INTEGER NULL,
+	total_members INTEGER NULL,
+	total_unsubscribed INTEGER NULL,
+	total_cleaned INTEGER NULL,
+	total_campaigns INTEGER NULL,
+	open_rate FLOAT NULL,
+	avg_sub_rate FLOAT NULL,
+	PRIMARY KEY (date_id, list_id)
+);
+
+DROP TABLE IF EXISTS lyf.d_mc_lists;
+CREATE TABLE lyf.d_mc_lists (
+	list_id VARCHAR NOT NULL,
+	name VARCHAR,
+	created_date DATE,
+	subscribe_url VARCHAR,
+	total_members INTEGER NULL,
+	total_unsubscribed INTEGER NULL,
+	total_cleaned INTEGER NULL,
+	total_campaigns INTEGER NULL,
+	open_rate FLOAT NULL,
+	avg_sub_rate FLOAT NULL,
+	last_campaign DATE,
+	last_subscriber DATE,
+	PRIMARY KEY (list_id)
+);
+
+DROP TABLE IF EXISTS lyf.d_mc_campaigns;
+CREATE TABLE lyf.d_mc_campaigns (
+	campaign_id VARCHAR NOT NULL,
+	name VARCHAR,
+	subject VARCHAR,
+	created_date DATE,
+	emails_sent INTEGER,
+	open_rate FLOAT,
+	click_rate FLOAT,
+	subscriber_clicks INTEGER,
+	clicks INTEGER,
+	opens INTEGER,
+	PRIMARY KEY (campaign_id)
+);
