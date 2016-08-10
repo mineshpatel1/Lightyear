@@ -5,7 +5,7 @@ app.controller('main-app', function($scope, $timeout, $http) {
 
     $scope.googleQuery = function() {
         $http.get('/google/analytics').then(function(response) {
-            console.log(response.data);
+            $scope.gaSessions = response.data[0];
         }, function(err) {
             // If the failure is due to lack of access, redirect to login page
             if (err.data.error.indexOf('No access') > -1) {

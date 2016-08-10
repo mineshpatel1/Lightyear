@@ -1,3 +1,7 @@
+// Global constants
+global.SERVER = 'lyf.com';
+global.PORT = 8080;
+
 var express = require('express'),
     http = require('http'),
     path = require('path'),
@@ -23,9 +27,6 @@ app.get('/oauth2', function(req, res) {
     var code = req.query.code;
     googleApi.client.getToken(code, function(err, tokens){
         googleApi.client.setCredentials(tokens);
-        googleApi.query(function(err, results) {
-            console.log(results.rows[0]);
-        });
     });
 
     // Redirect to homepage
@@ -47,7 +48,7 @@ app.get('/google/analytics', function(req, res) {
 });
 
 // Start server
-var server = app.listen(8080, function () {
+var server = app.listen(global.PORT, global.SERVER, function () {
     var host = server.address().address
     var port = server.address().port
     console.log("Lightyear app listening at http://%s:%s", host, port)

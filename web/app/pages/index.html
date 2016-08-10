@@ -19,6 +19,7 @@
             <div layout="row">
                 <md-button ng-click="googleQuery()">Google Analytics</md-button>
             </div>
+            <div ng-show="gaSessions">{{ 'Number of sessions: ' + gaSessions }}</div>
         </md-content>
     </body>
 </html>

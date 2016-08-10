@@ -1,11 +1,10 @@
 // Google Authentication
 var google = require('googleapis');
 
-
 var OAuth2 = google.auth.OAuth2;
 var CLIENT_ID = '1025868602652-dcqa8s8j9eo1jgnl7qi8to5v2l665mkk.apps.googleusercontent.com',
     CLIENT_SECRET = 'VRk5XZtTks3sppEJzerDXLw0',
-    REDIRECT_URL = 'http://localhost:8080/oauth2',
+    REDIRECT_URL = 'http://' + global.SERVER + ':' + global.PORT + '/oauth2',
     PROFILE = '69206942';
 var oauth2Client = new OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
 
