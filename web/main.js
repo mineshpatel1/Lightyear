@@ -48,7 +48,7 @@ app.get('/google/analytics', function(req, res) {
 });
 
 // Start server
-var server = app.listen(global.PORT, global.SERVER, function () {
+var server = app.listen(global.PORT, function () {
     var host = server.address().address
     var port = server.address().port
     console.log("Lightyear app listening at http://%s:%s", host, port)
