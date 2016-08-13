@@ -43,11 +43,13 @@ app.get('/auth/facebook/callback', function(req, res) {
 
 // Facebook query
 app.get('/facebook/analytics', function(req, res) {
-    var loggedIn = fbApi.query(function(err, results) {
+    var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
         if (err) {
-            console.log(err);
+            // Redirect to homepage
+            res.status(500);
+            res.send(err);
         } else {
-            console.log(results);
+            res.send(results);
         }
     });
 
@@ -55,7 +57,6 @@ app.get('/facebook/analytics', function(req, res) {
         // Redirect to homepage
         res.status(500);
         res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
-        res.end();
     }
 });
 

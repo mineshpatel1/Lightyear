@@ -12,9 +12,9 @@ fbURL += '&scope=read_insights,manage_pages';
 exports.fbURL = fbURL;
 exports.accessToken = accessToken;
 
-exports.query = function(callback) {
+exports.query = function(fields, callback) {
     if (exports.accessToken) {
-        var path = '/me?fields=id';
+        var path = '/me?fields=' + fields.join(',');
         path += '&access_token=' + exports.accessToken;
 
         var options = {
@@ -25,8 +25,11 @@ exports.query = function(callback) {
 
         var req = https.request(options, function(res) {
             if (res.statusCode == 200) {
-                res.on('data', function(data) {
-                    callback(false, JSON.parse(data));
+                var output = [];
+                res.on('data', function(chunk) {
+                    output.push(chunk);
+                }).on('end', function() {
+                    callback(false, JSON.parse(output));
                 });
             } else {
                 callback(res, {});
