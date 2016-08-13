@@ -28,3 +28,12 @@ exports.query = function(callback) {
     };
     Analytics.data.ga.get(params, callback);
 }
+
+exports.getProfiles = function(callback) {
+    Analytics.management.accountSummaries.list({}, function(err, results) {
+        if (!err) {
+            results = results.items;
+        }
+        callback(err, results)
+    });
+}

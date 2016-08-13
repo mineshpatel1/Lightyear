@@ -9,6 +9,15 @@ var fbURL = 'https://www.facebook.com/dialog/oauth?client_id=' + clientID;
 fbURL += '&redirect_uri=' + callbackURL;
 fbURL += '&scope=read_insights,manage_pages';
 
+function parseResponse(response, callback) {
+    var output = [];
+    response.on('data', function(chunk) {
+        output.push(chunk);
+    }).on('end', function() {
+        callback(JSON.parse(output));
+    });
+}
+
 exports.fbURL = fbURL;
 exports.accessToken = accessToken;
 
@@ -25,12 +34,15 @@ exports.query = function(fields, callback) {
 
         var req = https.request(options, function(res) {
             if (res.statusCode == 200) {
-                var output = [];
-                res.on('data', function(chunk) {
-                    output.push(chunk);
-                }).on('end', function() {
-                    callback(false, JSON.parse(output));
-                });
+                // var output = [];
+                // res.on('data', function(chunk) {
+                //     output.push(chunk);
+                // }).on('end', function() {
+                //     callback(false, JSON.parse(output));
+                // });
+                parseResponse(res, function(results) {
+                    callback(false, results);
+                })
             } else {
                 callback(res, {});
             }
@@ -57,10 +69,9 @@ exports.exchangeToken = function(code) {
 
     var req = https.request(options, function (res) {
         if (res.statusCode == 200) {
-            res.on('data', function(data) {
-                var output = JSON.parse(data);
-                exports.accessToken = output.access_token;
-                console.log('Set Facebook access token: ' + output.access_token)
+            parseResponse(res, function(results) {
+                exports.accessToken = results.access_token;
+                console.log('Set Facebook access token: ' + exports.accessToken);
             });
         }
     });

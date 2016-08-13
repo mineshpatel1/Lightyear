@@ -16,11 +16,24 @@
     </head>
 	<body ng-app="App" ng-controller="main-app">
         <md-content layout-padding>
-            <div layout="row">
-                <md-button ng-click="googleQuery()">Google Analytics</md-button>
-                <md-button ng-click="fbQuery()">Facebook</md-button>
+            <div layout="column">
+                <md-button ng-click="getGoogleProfiles()">Fetch Google Profiles</md-button>
+                <md-button ng-click="getFBPages()">Fetch Facebook Pages</md-button>
             </div>
-            <div ng-show="gaSessions">{{ 'Number of sessions: ' + gaSessions }}</div>
+            <div layout="row">
+                <div style="margin-right: 10px;">
+                    <div ng-show="googleProfiles.length > 0" style="font-weight: bold; margin-bottom: 10px;">Google Profiles</div>
+                    <md-radio-group ng-model="googleProfile">
+                        <md-radio-button ng-repeat="profile in googleProfiles" ng-value="profile.id" class="md-primary">{{ profile.name }}</md-radio-button>
+                    </md-radio-group>
+                </div>
+                <div>
+                    <div ng-show="fbPages.length > 0" style="font-weight: bold; margin-bottom: 10px;">Facebook Pages</div>
+                    <md-radio-group ng-model="fbPage">
+                        <md-radio-button ng-repeat="page in fbPages" ng-value="page.id" class="md-primary">{{ page.name }}</md-radio-button>
+                    </md-radio-group>
+                </div>
+            </div>
         </md-content>
     </body>
 </html>

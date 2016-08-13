@@ -60,6 +60,25 @@ app.get('/facebook/analytics', function(req, res) {
     }
 });
 
+// Facebook query
+app.get('/facebook/analytics/pages', function(req, res) {
+    var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
+        if (err) {
+            // Redirect to homepage
+            res.status(500);
+            res.send(err);
+        } else {
+            res.send(results.accounts.data);
+        }
+    });
+
+    if (!loggedIn) {
+        // Redirect to homepage
+        res.status(500);
+        res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
+    }
+});
+
 // Callback for Google authentication, setting authorisation credentials
 app.get('/auth/google/callback', function(req, res) {
     var code = req.query.code;
@@ -73,14 +92,32 @@ app.get('/auth/google/callback', function(req, res) {
     res.end();
 });
 
+// On failure, send the authorisation URL
+function googleError(response, err) {
+    if (err) {
+        response.status(500);
+        response.send({ error: String(err), authUrl: googleApi.authUrl });
+    }
+}
+
 // Query Google Analytics
 app.get('/google/analytics', function(req, res) {
     googleApi.query(function(err, results) {
         if (err) { // On failure, send the authorisation URL
-            res.status(500);
-            res.send({ error: String(err), authUrl: googleApi.authUrl });
+            googleError(res, err);
         } else {
             res.send(results.rows[0]);
+        }
+    });
+});
+
+// Get Google Analytics profiles
+app.get('/google/analytics/profiles', function(req, res) {
+    googleApi.getProfiles(function(err, results) {
+        if (err) {
+            googleError(res, err);
+        } else {
+            res.send(results);
         }
     });
 });
