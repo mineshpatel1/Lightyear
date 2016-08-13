@@ -1,13 +1,12 @@
 // Google Authentication
 var google = require('googleapis');
-var key = require(__dirname + '/../keys/google-client.json');
 
 var OAuth2 = google.auth.OAuth2;
-var CLIENT_ID = key.web.client_id,
-    CLIENT_SECRET = key.web.client_secret,
-    REDIRECT_URL = 'http://' + global.SERVER + ':' + global.PORT + '/oauth2',
-    PROFILE = key.web.profile;
-var oauth2Client = new OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
+var clientID = global.auth.google.client_id,
+    clientSecret = global.auth.google.client_secret,
+    redirectURL = global.auth.google.callback_url,
+    profile = global.auth.google.analytics_profile;
+var oauth2Client = new OAuth2(clientID, clientSecret, redirectURL);
 var Analytics = google.analytics({ 'version' : 'v3', 'auth' : oauth2Client });
 
 var googleScopes = ['https://www.googleapis.com/auth/analytics.readonly'];
@@ -25,7 +24,7 @@ exports.query = function(callback) {
         'start-date' : '7daysAgo',
         'end-date' : 'today',
         'metrics' : 'ga:sessions',
-        'ids' : 'ga:' + PROFILE
+        'ids' : 'ga:' + profile
     };
     Analytics.data.ga.get(params, callback);
 }
