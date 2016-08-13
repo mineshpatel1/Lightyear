@@ -4,4 +4,4 @@ google-api.json
 *.bak
 *.log
 web/node_modules
-web/app/keys
+web/keys

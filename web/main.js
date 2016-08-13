@@ -14,7 +14,7 @@ app.use('/lib', express.static(__dirname + '/node_modules'));
 app.use('/controllers', express.static(__dirname + '/app/controllers'));
 
 app.get('/', function (req, res) {
-   res.sendFile( __dirname + "/app/pages/index.html");
+   res.sendFile( __dirname + "/app/views/index.html");
 });
 
 // Authenticate the Google API via OAuth2
