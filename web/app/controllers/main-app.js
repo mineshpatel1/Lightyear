@@ -30,6 +30,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
             if ($scope.googleProfiles.length > 0)
                 $scope.googleProfile = $scope.googleProfiles[0].id;
         }, function(err) {
+            console.log(err.data.error);
             if (err.data.hasOwnProperty('authUrl'))
                 $scope.logins.ga = false;
         });
@@ -42,6 +43,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
             if ($scope.fbPages.length > 0)
                 $scope.fbPage = $scope.fbPages[0].id;
         }, function(err) {
+            console.log(err.data.error);
             if (err.data.hasOwnProperty('authUrl'))
                 $scope.logins.fb = false;
         });

@@ -11,7 +11,6 @@ var express = require('express'),
 
 var app = express();
 
-var passport = require('passport');
 var fbApi = require('./js/fb-api.js')
 var googleApi = require('./js/google-api.js')
 
@@ -34,10 +33,7 @@ app.get('/auth/facebook', function(req, res) {
 app.get('/auth/facebook/callback', function(req, res) {
     var code = req.query.code;
     fbApi.exchangeToken(code);
-
-    // Redirect to homepage
-    res.statusCode = 302;
-    res.setHeader("Location", "/");
+    res.redirect('/');
     res.end();
 });
 
@@ -45,7 +41,6 @@ app.get('/auth/facebook/callback', function(req, res) {
 app.get('/facebook/analytics', function(req, res) {
     var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
         if (err) {
-            // Redirect to homepage
             res.status(500);
             res.send(err);
         } else {
@@ -54,7 +49,6 @@ app.get('/facebook/analytics', function(req, res) {
     });
 
     if (!loggedIn) {
-        // Redirect to homepage
         res.status(500);
         res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
     }
@@ -64,7 +58,6 @@ app.get('/facebook/analytics', function(req, res) {
 app.get('/facebook/analytics/pages', function(req, res) {
     var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
         if (err) {
-            // Redirect to homepage
             res.status(500);
             res.send(err);
         } else {
@@ -73,7 +66,6 @@ app.get('/facebook/analytics/pages', function(req, res) {
     });
 
     if (!loggedIn) {
-        // Redirect to homepage
         res.status(500);
         res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
     }
@@ -85,10 +77,7 @@ app.get('/auth/google/callback', function(req, res) {
     googleApi.client.getToken(code, function(err, tokens){
         googleApi.client.setCredentials(tokens);
     });
-
-    // Redirect to homepage
-    res.statusCode = 302;
-    res.setHeader("Location", "/");
+    res.redirect('/');
     res.end();
 });
 
