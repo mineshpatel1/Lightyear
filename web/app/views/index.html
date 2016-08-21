@@ -23,13 +23,13 @@
                 <md-button ng-if="!logins.fb" ng-click="fbLogin()">Authenticate with Facebook</md-button>
             </div>
             <div layout="row">
-                <md-input-container ng-if="googleProfiles.length > 0">
+                <md-input-container ng-show="googleProfiles.length > 0">
                     <label>Google Profile</label>
                     <md-select ng-model="googleProfile">
                         <md-option ng-repeat="profile in googleProfiles" ng-value="profile.id">{{ profile.name }}</md-option>
                     </md-select>
                 </md-input-container>
-                <md-input-container ng-if="fbPages.length > 0">
+                <md-input-container ng-show="fbPages.length > 0">
                     <label>Facebook Page</label>
                     <md-select ng-model="fbPage">
                         <md-option ng-repeat="page in fbPages" ng-value="page.id">{{ page.name }}</md-option>

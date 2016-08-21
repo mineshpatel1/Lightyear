@@ -57,7 +57,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
     }
 
     $scope.test = function() {
-        console.log($scope.googleProfile, $scope.fbPage);
+        console.log($scope.fbPage, $scope.fbPages);
     }
 
     // Google Analytics endpoints

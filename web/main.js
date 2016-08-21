@@ -7,18 +7,25 @@ var express = require('express'),
     http = require('http'),
     https = require('https'),
     path = require('path'),
-    $ = require('jquery');
+    mongoose = require('mongoose');
 
 var app = express();
 
-var fbApi = require('./js/fb-api.js')
-var googleApi = require('./js/google-api.js')
+var fbApi = require('./server/api/fb.js');
+var googleApi = require('./server/api/google.js');
+
+// Initialise MongoDB
+mongoose.connect('mongodb://localhost/lyf');
 
 app.use('/lib', express.static(__dirname + '/node_modules'));
 app.use('/controllers', express.static(__dirname + '/app/controllers'));
 
 app.get('/', function (req, res) {
    res.sendFile(__dirname + "/app/views/index.html");
+});
+
+app.get('/login', function (req, res) {
+   res.sendFile(__dirname + "/app/views/login.html");
 });
 
 // Authenticate the Google API via OAuth2
