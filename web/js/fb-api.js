@@ -10,9 +10,10 @@ fbURL += '&redirect_uri=' + callbackURL;
 fbURL += '&scope=read_insights,manage_pages';
 
 function parseResponse(response, callback) {
-    var output = [];
+    var output = '';
+    response.setEncoding('utf8');
     response.on('data', function(chunk) {
-        output.push(chunk);
+        output += chunk.toString('utf-8').trim();
     }).on('end', function() {
         callback(JSON.parse(output));
     });
@@ -34,12 +35,6 @@ exports.query = function(fields, callback) {
 
         var req = https.request(options, function(res) {
             if (res.statusCode == 200) {
-                // var output = [];
-                // res.on('data', function(chunk) {
-                //     output.push(chunk);
-                // }).on('end', function() {
-                //     callback(false, JSON.parse(output));
-                // });
                 parseResponse(res, function(results) {
                     callback(false, results);
                 })
