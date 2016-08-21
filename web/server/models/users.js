@@ -3,10 +3,10 @@ var bcrypt   = require('bcrypt-nodejs');
 
 // New user schema
 var userSchema = new mongoose.Schema({
-    name: String,
+    displayName: String,
     email: { type: String, required: true, unique: true },
     password: String,
-    token: String
+    token: String,
     google: {
         id: String,
         name: String,
@@ -27,7 +27,7 @@ var userSchema = new mongoose.Schema({
 
 // Hash password using BCrypt
 userSchema.methods.generateHash = function(password) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
+    return bcrypt.hashSync(password);
 };
 
 // Checking if password is valid

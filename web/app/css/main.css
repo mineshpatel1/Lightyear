@@ -1,0 +1,10 @@
+.error {
+    color: rgb(221,44,0);
+}
+
+md-input-container .hint {
+    font-size: 12px;
+    color: grey;
+    bottom: 5px;
+    position: absolute;
+}

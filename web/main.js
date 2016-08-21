@@ -7,19 +7,24 @@ var express = require('express'),
     http = require('http'),
     https = require('https'),
     path = require('path'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    bodyParser = require('body-parser');
 
 var app = express();
+app.use(bodyParser.json());
 
 var fbApi = require('./server/api/fb.js');
 var googleApi = require('./server/api/google.js');
 
 // Initialise MongoDB
 mongoose.connect('mongodb://localhost/lyf');
+var User = require('./server/models/users.js');
 
 app.use('/lib', express.static(__dirname + '/node_modules'));
+app.use('/css', express.static(__dirname + '/app/css'));
 app.use('/controllers', express.static(__dirname + '/app/controllers'));
 
+// Application view routes
 app.get('/', function (req, res) {
    res.sendFile(__dirname + "/app/views/index.html");
 });
@@ -27,6 +32,53 @@ app.get('/', function (req, res) {
 app.get('/login', function (req, res) {
    res.sendFile(__dirname + "/app/views/login.html");
 });
+
+// Local authentication
+app.post('/auth/local', function (req, res) {
+    var creds = req.body;
+
+    User.findOne({ email : creds.email }, function(err, user) {
+        if (err) throw err;
+
+        if (!user) {
+            res.status(403).send('No user with email ' + creds.email + ' found.');
+        } else {
+            if (user.validPassword(creds.password)) {
+                res.send('OK');
+            } else {
+                res.status(401).send('Invalid password.')
+            }
+        }
+    });
+});
+
+// Local registration
+app.post('/auth/local/register', function(req, res) {
+    var creds = req.body;
+
+    var newUser = User(creds);
+    newUser.password = newUser.generateHash(creds.password);
+    newUser.save(function(err) {
+        if (err) {
+            var errMsg;
+
+            if (err.toJSON) {
+                errMsg = err.toJSON().errmsg;
+            } else {
+                errMsg = err.message;
+            }
+
+            if (errMsg.indexOf('duplicate key error') > -1) {
+                res.status(403).send('User already exists.');
+            } else {
+                res.status(500).send(errMsg);
+            }
+        } else {
+            console.log('New user: ' + creds.email + ' created.');
+            res.send('OK');
+        }
+    });
+})
 
 // Authenticate the Google API via OAuth2
 app.get('/auth/google', function(req, res) {
@@ -56,7 +108,7 @@ app.get('/facebook/analytics', function(req, res) {
     });
 
     if (!loggedIn) {
-        res.status(500);
+        res.status(401);
         res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
     }
 });
@@ -73,7 +125,7 @@ app.get('/facebook/analytics/pages', function(req, res) {
     });
 
     if (!loggedIn) {
-        res.status(500);
+        res.status(401);
         res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
     }
 });
@@ -91,7 +143,7 @@ app.get('/auth/google/callback', function(req, res) {
 // On failure, send the authorisation URL
 function googleError(response, err) {
     if (err) {
-        response.status(500);
+        response.status(401);
         response.send({ error: String(err), authUrl: googleApi.authUrl });
     }
 }
