@@ -15,24 +15,26 @@
         <script src="/controllers/main-app.js"></script>
     </head>
 	<body ng-app="App" ng-controller="main-app">
-        <md-content layout-padding>
+        <md-progress-linear md-mode="indeterminate" ng-if="!initialised"></md-progress-linear>
+        <md-content layout-padding ng-show="initialised">
             <div layout="column">
-                <md-button ng-click="getGoogleProfiles()">Fetch Google Profiles</md-button>
-                <md-button ng-click="getFBPages()">Fetch Facebook Pages</md-button>
+                <md-button ng-click="test()">Test</md-button>
+                <md-button ng-show="!logins.ga" ng-click="gaLogin()">Authenticate with Google</md-button>
+                <md-button ng-show="!logins.fb" ng-click="fbLogin()">Authenticate with Facebook</md-button>
             </div>
             <div layout="row">
-                <div style="margin-right: 10px;">
-                    <div ng-show="googleProfiles.length > 0" style="font-weight: bold; margin-bottom: 10px;">Google Profiles</div>
-                    <md-radio-group ng-model="googleProfile">
-                        <md-radio-button ng-repeat="profile in googleProfiles" ng-value="profile.id" class="md-primary">{{ profile.name }}</md-radio-button>
-                    </md-radio-group>
-                </div>
-                <div>
-                    <div ng-show="fbPages.length > 0" style="font-weight: bold; margin-bottom: 10px;">Facebook Pages</div>
-                    <md-radio-group ng-model="fbPage">
-                        <md-radio-button ng-repeat="page in fbPages" ng-value="page.id" class="md-primary">{{ page.name }}</md-radio-button>
-                    </md-radio-group>
-                </div>
+                <md-input-container>
+                    <label>Google Profile</label>
+                    <md-select ng-model="googleProfile">
+                        <md-option ng-repeat="profile in googleProfiles" ng-value="profile.id">{{ profile.name }}</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-input-container>
+                    <label>Facebook Page</label>
+                    <md-select ng-model="fbPage">
+                        <md-option ng-repeat="page in fbPages" ng-value="page.id">{{ page.name }}</md-option>
+                    </md-select>
+                </md-input-container>
             </div>
         </md-content>
     </body>
