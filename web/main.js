@@ -8,10 +8,28 @@ var express = require('express'),
     https = require('https'),
     path = require('path'),
     mongoose = require('mongoose'),
-    bodyParser = require('body-parser');
+    bodyParser = require('body-parser'),
+    cookieParser = require('cookie-parser'),
+    session = require('express-session');
+
+var sessionOpts = {
+    saveUninitialized: false, // Saved new sessions
+    resave: false, // Do not automatically write to the session store
+    secret: global.auth.session_secret,
+    cookie : { httpOnly: true, maxAge: 50000 }
+}
 
 var app = express();
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
+// Put static resources before the session declaration
+app.use('/lib', express.static(__dirname + '/node_modules'));
+app.use('/css', express.static(__dirname + '/app/css'));
+app.use('/controllers', express.static(__dirname + '/app/controllers'));
+
+app.use(cookieParser(global.auth.session_secret));
+app.use(session(sessionOpts));
 
 var fbApi = require('./server/api/fb.js');
 var googleApi = require('./server/api/google.js');
@@ -20,18 +38,25 @@ var googleApi = require('./server/api/google.js');
 mongoose.connect('mongodb://localhost/lyf');
 var User = require('./server/models/users.js');
 
-app.use('/lib', express.static(__dirname + '/node_modules'));
-app.use('/css', express.static(__dirname + '/app/css'));
-app.use('/controllers', express.static(__dirname + '/app/controllers'));
-
 // Application view routes
 app.get('/', function (req, res) {
-   res.sendFile(__dirname + "/app/views/index.html");
+    checkAuth(req, res, function() {
+        res.sendFile(__dirname + "/app/views/index.html");
+    });
 });
 
 app.get('/login', function (req, res) {
-   res.sendFile(__dirname + "/app/views/login.html");
+    res.sendFile(__dirname + "/app/views/login.html");
 });
+
+// Checks if session is authorised and redirects to login page if not
+function checkAuth(req, res, callback) {
+    if (!req.session.user) {
+        res.redirect('/login');
+    } else {
+        callback();
+    }
+}
 
 // Local authentication
 app.post('/auth/local', function (req, res) {
@@ -44,7 +69,8 @@ app.post('/auth/local', function (req, res) {
             res.status(403).send('No user with email ' + creds.email + ' found.');
         } else {
             if (user.validPassword(creds.password)) {
-                res.send('OK');
+                req.session.user = creds.email;
+                res.status(200).send('OK');
             } else {
                 res.status(401).send('Invalid password.')
             }
@@ -75,18 +101,18 @@ app.post('/auth/local/register', function(req, res) {
             }
         } else {
             console.log('New user: ' + creds.email + ' created.');
-            res.send('OK');
+            res.status(200).send('OK');
         }
     });
 })
 
 // Authenticate the Google API via OAuth2
 app.get('/auth/google', function(req, res) {
-    res.send(googleApi.authUrl);
+    res.status(200).send(googleApi.authUrl);
 });
 
 app.get('/auth/facebook', function(req, res) {
-    res.send(fbApi.fbURL);
+    res.status(200).send(fbApi.fbURL);
 });
 
 app.get('/auth/facebook/callback', function(req, res) {
@@ -100,16 +126,14 @@ app.get('/auth/facebook/callback', function(req, res) {
 app.get('/facebook/analytics', function(req, res) {
     var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
         if (err) {
-            res.status(500);
-            res.send(err);
+            res.status(500).send(err);
         } else {
-            res.send(results);
+            res.status(200).send(results);
         }
     });
 
     if (!loggedIn) {
-        res.status(401);
-        res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
+        res.status(401).send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
     }
 });
 
@@ -117,16 +141,14 @@ app.get('/facebook/analytics', function(req, res) {
 app.get('/facebook/analytics/pages', function(req, res) {
     var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
         if (err) {
-            res.status(500);
-            res.send(err);
+            res.status(500).send(err);
         } else {
-            res.send(results.accounts.data);
+            res.status(200).send(results.accounts.data);
         }
     });
 
     if (!loggedIn) {
-        res.status(401);
-        res.send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
+        res.status(401).send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
     }
 });
 
@@ -154,7 +176,7 @@ app.get('/google/analytics', function(req, res) {
         if (err) { // On failure, send the authorisation URL
             googleError(res, err);
         } else {
-            res.send(results.rows[0]);
+            res.status(200).send(results.rows[0]);
         }
     });
 });
@@ -165,7 +187,7 @@ app.get('/google/analytics/profiles', function(req, res) {
         if (err) {
             googleError(res, err);
         } else {
-            res.send(results);
+            res.status(200).send(results);
         }
     });
 });
