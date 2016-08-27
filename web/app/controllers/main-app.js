@@ -60,6 +60,11 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
         console.log($scope.fbPage, $scope.fbPages);
     }
 
+    // Log off from the application
+    $scope.logout = function() {
+        navigate('/auth/local/logoff');
+    }
+
     // Google Analytics endpoints
     $scope.gaLogin = function() {
         $http.get('/auth/google').then(function(response) {

@@ -85,6 +85,17 @@ app.post('/auth/local', function (req, res) {
     });
 });
 
+// Logout and end the user's session
+app.get('/auth/local/logoff', function(req, res) {
+    req.session.destroy(function(err) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.redirect('/login');
+        }
+    });
+});
+
 // Local registration
 app.post('/auth/local/register', function(req, res) {
     var creds = req.body;

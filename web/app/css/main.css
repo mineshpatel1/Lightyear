@@ -8,3 +8,18 @@ md-input-container .hint {
     bottom: 5px;
     position: absolute;
 }
+
+/* Fades element when used with ng-show */
+.ng-fade.ng-hide-add, .ng-fade.ng-hide-remove,
+.md-toolbar-tools .md-button.ng-fade.ng-hide-add,
+.md-toolbar-tools .md-button.ng-fade.ng-hide-remove {
+    transition: 0.5s linear all;
+}
+
+.ng-fade {
+    opacity: 1;
+}
+
+.ng-fade.ng-hide {
+    opacity: 0;
+}

@@ -10,12 +10,25 @@
         <script src="/lib/angular-aria/angular-aria.min.js"></script>
         <script src="/lib/angular-material/angular-material.min.js"></script>
         <link rel="stylesheet" href="/lib/angular-material/angular-material.min.css">
+        <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
         <title>Social Media App</title>
         <script>var app = angular.module('App', ['ngMaterial', 'ngAnimate']);</script>
         <script src="/controllers/main-app.js"></script>
     </head>
 	<body ng-app="App" ng-controller="main-app">
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2 flex>
+                    <span>Social Media Analytics</span>
+                </h2>
+                <span flex></span>
+                <md-button class="md-icon-button" aria-label="Sign Out" ng-click="logout()">
+                    <md-tooltip md-direction="left">Logout</md-tooltip>
+                    <md-icon md-font-icon="fa-sign-out" class="fa fa-2x"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
         <md-progress-linear md-mode="indeterminate" ng-if="!initialised"></md-progress-linear>
         <md-content layout-padding ng-show="initialised">
             <div layout="column">

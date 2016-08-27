@@ -20,73 +20,67 @@
         <md-toolbar>
             <div class="md-toolbar-tools">
                 <h2 flex>
-                    <span ng-show="!signUpMode">Login</span>
-                    <span ng-show="signUpMode">Sign Up</span>
+                    <span>Social Media Analytics</span>
                 </h2>
-                <span flex></span>
-                <md-button ng-if="!signUpMode" class="md-icon-button" aria-label="Sign Up" ng-click="toggleMode()">
-                    <md-tooltip md-direction="left">Register</md-tooltip>
-                    <md-icon md-font-icon="fa-user-plus" class="fa fa-2x"></md-icon>
-                </md-button>
-                <md-button ng-if="signUpMode" class="md-icon-button" aria-label="Sign In" ng-click="toggleMode()">
-                    <md-tooltip md-direction="left">Login</md-tooltip>
-                    <md-icon md-font-icon="fa-sign-in" class="fa fa-2x"></md-icon>
-                </md-button>
             </div>
         </md-toolbar>
         <md-progress-linear ng-if="loading" md-mode="indeterminate"></md-progress-linear>
         <div>
-            <md-content style="margin-top: 10px;">
-                <form name="loginForm" ng-submit="login()" ng-show="!signUpMode">
-                    <div layout="row" layout-xs="column" layout-margin>
-                        <md-input-container flex>
-                            <label>Email</label>
-                            <input name="email" required type="email" ng-model="email">
-                            <div ng-messages="loginForm.email.$error">
-                                <div ng-message-exp="['email', 'required']">Invalid e-mail format</div>
-                            </div>
-                        </md-input-container>
-                        <md-input-container flex>
-                            <label>Password</label>
-                            <input name="password" minlength="8" ng-model="password" required type="password">
-                            <div ng-messages="loginForm.password.$error">
-                                <div ng-message-exp="['minlength', 'required']">Password must be at least 8 characters</div>
-                            </div>
-                        </md-input-container>
-                    </div>
-                    <div layout="column" layout-align="center center">
-                        <md-button class="md-raised md-primary" type="submit">Login</md-button>
-                    </div>
-                </form>
-                <form name="registerForm" ng-submit="register()" ng-show="signUpMode">
-                    <div layout="row" layout-xs="column" layout-margin>
-                        <md-input-container flex>
-                            <label>Name</label>
-                            <input ng-model="displayName" required>
-                            <div class="hint">Display name for the user in the application</div>
-                        </md-input-container>
-                    </div>
-                    <div layout="row" layout-xs="column" layout-margin>
-                        <md-input-container flex>
-                            <label>Email</label>
-                            <input name="email" ng-model="email" required type="email">
-                            <div ng-messages="registerForm.email.$error">
-                                <div ng-message-exp="['email', 'required']">Invalid e-mail format</div>
-                            </div>
-                        </md-input-container>
-                        <md-input-container flex>
-                            <label>Password</label>
-                            <input name="password" ng-model="password" minlength="8" required type="password">
-                            <div ng-messages="registerForm.password.$error">
-                                <div ng-message-exp="['minlength', 'required']">Password must be at least 8 characters</div>
-                            </div>
-                        </md-input-container>
-                    </div>
-                    <div layout="column" layout-align="center center">
-                        <md-button class="md-raised md-primary" type="submit">Register</md-button>
-                    </div>
-                </form>
-            </md-content>
+            <md-tabs class="md-primary" md-dynamic-height>
+                <md-tab label="Login">
+                    <form name="loginForm" ng-submit="login()">
+                        <div layout="row" layout-xs="column" layout-margin>
+                            <md-input-container flex>
+                                <label>Email</label>
+                                <input name="email" required type="email" ng-model="email">
+                                <div ng-messages="loginForm.email.$error">
+                                    <div ng-message-exp="['email', 'required']">Invalid e-mail format</div>
+                                </div>
+                            </md-input-container>
+                            <md-input-container flex>
+                                <label>Password</label>
+                                <input name="password" minlength="8" ng-model="password" required type="password">
+                                <div ng-messages="loginForm.password.$error">
+                                    <div ng-message-exp="['minlength', 'required']">Password must be at least 8 characters</div>
+                                </div>
+                            </md-input-container>
+                        </div>
+                        <div layout="column" layout-align="center center">
+                            <md-button class="md-raised md-primary" type="submit">Login</md-button>
+                        </div>
+                    </form>
+                </md-tab>
+                <md-tab label="Register">
+                    <form name="registerForm" ng-submit="register()">
+                        <div layout="row" layout-xs="column" layout-margin>
+                            <md-input-container flex>
+                                <label>Name</label>
+                                <input ng-model="displayName" required>
+                                <div class="hint">Display name for the user in the application</div>
+                            </md-input-container>
+                        </div>
+                        <div layout="row" layout-xs="column" layout-margin>
+                            <md-input-container flex>
+                                <label>Email</label>
+                                <input name="email" ng-model="email" required type="email">
+                                <div ng-messages="registerForm.email.$error">
+                                    <div ng-message-exp="['email', 'required']">Invalid e-mail format</div>
+                                </div>
+                            </md-input-container>
+                            <md-input-container flex>
+                                <label>Password</label>
+                                <input name="password" ng-model="password" minlength="8" required type="password">
+                                <div ng-messages="registerForm.password.$error">
+                                    <div ng-message-exp="['minlength', 'required']">Password must be at least 8 characters</div>
+                                </div>
+                            </md-input-container>
+                        </div>
+                        <div layout="column" layout-align="center center">
+                            <md-button class="md-raised md-primary" type="submit">Register</md-button>
+                        </div>
+                    </form>
+                </md-tab>
+            </md-tabs>
         </div>
     </body>
 </html>
