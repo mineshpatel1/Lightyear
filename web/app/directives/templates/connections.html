@@ -1,0 +1,24 @@
+<div>
+    <md-progress-linear md-mode="indeterminate" ng-if="loading"></md-progress-linear>
+    <md-content layout="row" layout-padding>
+        <md-list ng-if="initialised">
+            <md-list-item>
+                <md-icon md-font-icon="fa-google" class="fa fa-2x" ng-class="connections.google.name ? 'md-primary' : ''"></md-icon>
+                <md-input-container ng-if="connections.google.name" class="noErrors" style="margin-right: 10px;">
+                    <label>Account</label>
+                    <input ng-model="connections.google.name" aria-label="Profile" disabled>
+                </md-input-container>
+                <md-input-container ng-if="connections.google.name" style="min-width: 200px;">
+                    <label>Analytics Profile</label>
+                    <md-select ng-model="connections.google.profile" aria-label="Profile">
+                        <md-option ng-repeat="profile in connections.google.profiles" ng-value="profile.id">{{ profile.name }}</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-icon ng-if="connections.google.name" class="fa md-secondary md-warn" md-font-icon="fa-times" ng-click="gaRevoke()" aria-label="Revoke">
+                    <md-tooltip md-direction="right">Remove Account</md-tooltip>
+                </md-icon>
+                <md-button ng-if="!connections.google.name" class="md-secondary md-primary md-raised" ng-click="gaLogin()">Link Account</md-button>
+            </md-list-item>
+        </md-list>
+    </md-content>
+</div>

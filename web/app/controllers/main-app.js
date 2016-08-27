@@ -1,16 +1,18 @@
-app.controller('main-app', function($scope, $timeout, $http, $q) {
+app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Global) {
     $scope.initialised = false;
     $scope.logins = {};
-    $scope.googleProfiles = [], $scope.fbPages = [];
+    $scope.fbPages = [];
+    $scope.conns = {
+        google: {},
+        facbeook: {}
+    };
 
     // Runs on page load
     function init() {
-        var deferred = $q.defer();
-        var initTasks = [];
-
-        initTasks.push(checkLogins());
-        $q.all(initTasks).then(function() {
+        Global.fetchConnections($scope.conns, function() {
             $scope.initialised = true;
+        }, function() {
+            console.log('Failed to retrieve connections');
         })
     }
 
@@ -22,19 +24,6 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
     function checkLogins() {
         var urlCalls = [];
         var deferred = $q.defer();
-
-        // Check Google Analytics auth by attempting to retrieve profiles
-        var ga = $http.get('/google/analytics/profiles').then(function(response) {
-            $scope.logins.ga = true;
-            $scope.googleProfiles = response.data;
-            if ($scope.googleProfiles.length > 0)
-                $scope.googleProfile = $scope.googleProfiles[0].id;
-        }, function(err) {
-            console.log(err.data.error);
-            if (err.data.hasOwnProperty('authUrl'))
-                $scope.logins.ga = false;
-        });
-        urlCalls.push(ga);
 
         // Check Facebook auth by attempting to retrieve pages
         var fb = $http.get('/facebook/analytics/pages').then(function(response) {
@@ -57,19 +46,28 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
     }
 
     $scope.test = function() {
-        console.log($scope.fbPage, $scope.fbPages);
+        console.log($scope.conns.google);
+    }
+
+    // Shows dialogue with all possible connections
+    $scope.showConnections = function(ev) {
+        $mdDialog.show({
+            controller: DialogueController,
+            templateUrl: '/app/templates/dialogues/connections.html',
+            parent: angular.element(document.body),
+            targetEvent: ev,
+            locals: {
+                conns: $scope.conns
+            }
+        })
+        .then(function(connections) {
+            $scope.conns = connections;
+        });
     }
 
     // Log off from the application
     $scope.logout = function() {
         navigate('/auth/local/logoff');
-    }
-
-    // Google Analytics endpoints
-    $scope.gaLogin = function() {
-        $http.get('/auth/google').then(function(response) {
-            navigate(response.data);
-        }, googleError);
     }
 
     $scope.gaQuery = function() {
@@ -105,6 +103,14 @@ app.controller('main-app', function($scope, $timeout, $http, $q) {
         if (err.data.hasOwnProperty('authUrl')) { // Authenticate if necessary
             $scope.fbLogin();
         }
+    }
+
+    // Angular dialog controller
+    function DialogueController($scope, $mdDialog, conns) {
+        $scope.conns = conns;
+        $scope.close = function() {
+            $mdDialog.hide($scope.conns);
+        };
     }
 
     init();

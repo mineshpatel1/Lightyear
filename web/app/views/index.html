@@ -14,7 +14,10 @@
 
         <title>Social Media App</title>
         <script>var app = angular.module('App', ['ngMaterial', 'ngAnimate']);</script>
-        <script src="/controllers/main-app.js"></script>
+        <script src="/app/controllers/main-app.js"></script>
+        <script src="/app/directives/directives.js"></script>
+        <script src="/app/services/global.js"></script>
+        <link rel="stylesheet" href="/app/css/main.css">
     </head>
 	<body ng-app="App" ng-controller="main-app">
         <md-toolbar>
@@ -22,6 +25,10 @@
                 <h2 flex>
                     <span>Social Media Analytics</span>
                 </h2>
+                <md-button class="md-icon-button" aria-label="Connectivity" ng-click="showConnections($event)">
+                    <md-tooltip>Connections</md-tooltip>
+                    <md-icon md-font-icon="fa-plug" class="fa fa-2x"></md-icon>
+                </md-button>
                 <span flex></span>
                 <md-button class="md-icon-button" aria-label="Sign Out" ng-click="logout()">
                     <md-tooltip md-direction="left">Logout</md-tooltip>
@@ -30,26 +37,8 @@
             </div>
         </md-toolbar>
         <md-progress-linear md-mode="indeterminate" ng-if="!initialised"></md-progress-linear>
+        <md-button ng-click="test()">Test</md-button>
         <md-content layout-padding ng-show="initialised">
-            <div layout="column">
-                <md-button ng-click="test()">Test</md-button>
-                <md-button ng-if="!logins.ga" ng-click="gaLogin()">Authenticate with Google</md-button>
-                <md-button ng-if="!logins.fb" ng-click="fbLogin()">Authenticate with Facebook</md-button>
-            </div>
-            <div layout="row">
-                <md-input-container ng-show="googleProfiles.length > 0">
-                    <label>Google Profile</label>
-                    <md-select ng-model="googleProfile">
-                        <md-option ng-repeat="profile in googleProfiles" ng-value="profile.id">{{ profile.name }}</md-option>
-                    </md-select>
-                </md-input-container>
-                <md-input-container ng-show="fbPages.length > 0">
-                    <label>Facebook Page</label>
-                    <md-select ng-model="fbPage">
-                        <md-option ng-repeat="page in fbPages" ng-value="page.id">{{ page.name }}</md-option>
-                    </md-select>
-                </md-input-container>
-            </div>
         </md-content>
     </body>
 </html>

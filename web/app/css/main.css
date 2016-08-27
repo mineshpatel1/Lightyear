@@ -23,3 +23,7 @@ md-input-container .hint {
 .ng-fade.ng-hide {
     opacity: 0;
 }
+
+md-input-container.noErrors .md-errors-spacer{
+    display: none;
+}

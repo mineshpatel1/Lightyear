@@ -6,19 +6,14 @@ var userSchema = new mongo.Schema({
     displayName: String,
     email: { type: String, required: true, unique: true },
     password: String,
-    token: String,
     google: {
         id: String,
         name: String,
-        email: String,
-        token: String,
+        token: Object,
         defaultProfileID: String
     },
     facebook: {
-        id: String,
-        name: String,
-        email: String,
-        token: String,
+        token: Object,
         defaultPageID: String
     },
     created: Date,

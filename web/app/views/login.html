@@ -13,22 +13,15 @@
 
         <title>Social Media App</title>
         <script>var app = angular.module('App', ['ngMaterial', 'ngAnimate', 'ngMessages']);</script>
-        <script src="/controllers/login.js"></script>
-        <link rel="stylesheet" href="/css/main.css">
+        <script src="/app/controllers/login.js"></script>
+        <link rel="stylesheet" href="/app/css/main.css">
     </head>
 	<body ng-app="App" ng-controller="login" id="login">
-        <md-toolbar>
-            <div class="md-toolbar-tools">
-                <h2 flex>
-                    <span>Social Media Analytics</span>
-                </h2>
-            </div>
-        </md-toolbar>
         <md-progress-linear ng-if="loading" md-mode="indeterminate"></md-progress-linear>
         <div>
             <md-tabs class="md-primary" md-dynamic-height>
                 <md-tab label="Login">
-                    <form name="loginForm" ng-submit="login()">
+                    <form name="loginForm" ng-submit="login()" style="margin-top: 10px;">
                         <div layout="row" layout-xs="column" layout-margin>
                             <md-input-container flex>
                                 <label>Email</label>
@@ -51,7 +44,7 @@
                     </form>
                 </md-tab>
                 <md-tab label="Register">
-                    <form name="registerForm" ng-submit="register()">
+                    <form name="registerForm" ng-submit="register()" style="margin-top: 10px;">
                         <div layout="row" layout-xs="column" layout-margin>
                             <md-input-container flex>
                                 <label>Name</label>

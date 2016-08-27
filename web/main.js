@@ -13,6 +13,8 @@ var express = require('express'),
     session = require('express-session'),
     MongoStore = require('connect-mongo')(session);
 
+var currentUser;
+
 // Initialise MongoDB
 mongo.connect('mongodb://localhost/lyf');
 
@@ -20,7 +22,7 @@ var sessionOpts = {
     saveUninitialized: false, // Saved new sessions
     resave: false, // Do not automatically write to the session store
     secret: global.auth.session_secret,
-    cookie : { httpOnly: true, maxAge: 50000 },
+    cookie : { httpOnly: true, maxAge: 86400000 },
     store: new MongoStore({ mongooseConnection: mongo.connection })
 }
 
@@ -30,8 +32,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 // Put static resources before the session declaration
 app.use('/lib', express.static(__dirname + '/node_modules'));
-app.use('/css', express.static(__dirname + '/app/css'));
-app.use('/controllers', express.static(__dirname + '/app/controllers'));
+app.use('/app', express.static(__dirname + '/app'));
 
 app.use(cookieParser(global.auth.session_secret));
 app.use(session(sessionOpts));
@@ -61,7 +62,14 @@ function checkAuth(req, res, callback) {
     if (!req.session.user) {
         res.redirect('/login');
     } else {
-        callback();
+        // Load user profile from the database
+        User.findOne({ email : req.session.user }, function(err, user) {
+            currentUser = user;
+            if (googleApi.checkSession(currentUser)) {
+                googleApi.client.setCredentials(currentUser.google.token);
+            }
+            callback();
+        });
     }
 }
 
@@ -118,16 +126,12 @@ app.post('/auth/local/register', function(req, res) {
                 res.status(500).send(errMsg);
             }
         } else {
+            req.session.user = creds.email;
             console.log('New user: ' + creds.email + ' created.');
             res.status(200).send('OK');
         }
     });
 })
-
-// Authenticate the Google API via OAuth2
-app.get('/auth/google', function(req, res) {
-    res.status(200).send(googleApi.authUrl);
-});
 
 app.get('/auth/facebook', function(req, res) {
     res.status(200).send(fbApi.fbURL);
@@ -170,23 +174,49 @@ app.get('/facebook/analytics/pages', function(req, res) {
     }
 });
 
+// Authenticate the Google API via OAuth2
+app.get('/auth/google', function(req, res) {
+    res.status(200).send(googleApi.authUrl);
+});
+
+// Authenticate the Google API via OAuth2
+app.get('/auth/google/check', function(req, res) {
+    var check = googleApi.checkSession(currentUser);
+    res.status(200).send(check);
+});
+
+// Revokes Google access
+app.get('/auth/google/revoke', function(req, res) {
+    googleApi.revokeAccess(currentUser, function() {
+        res.status(200).send('OK');
+    }, function() {
+        res.status(500).send('Could not revoke Google session.');
+    });
+
+});
+
 // Callback for Google authentication, setting authorisation credentials
 app.get('/auth/google/callback', function(req, res) {
     var code = req.query.code;
-    googleApi.client.getToken(code, function(err, tokens){
+    googleApi.client.getToken(code, function(err, tokens) {
+        currentUser.google.token = tokens;
+        currentUser.save();
         googleApi.client.setCredentials(tokens);
+        googleApi.userInfo(function(err, googleUser) {
+            if (err) {
+                res.redirect('/');
+                res.end();
+            } else {
+                currentUser.google.id = googleUser.id;
+                currentUser.google.name = googleUser.name;
+                currentUser.save(function() {
+                    res.redirect('/');
+                    res.end();
+                });
+            }
+        });
     });
-    res.redirect('/');
-    res.end();
 });
-
-// On failure, send the authorisation URL
-function googleError(response, err) {
-    if (err) {
-        response.status(401);
-        response.send({ error: String(err), authUrl: googleApi.authUrl });
-    }
-}
 
 // Query Google Analytics
 app.get('/google/analytics', function(req, res) {
@@ -199,16 +229,36 @@ app.get('/google/analytics', function(req, res) {
     });
 });
 
-// Get Google Analytics profiles
-app.get('/google/analytics/profiles', function(req, res) {
-    googleApi.getProfiles(function(err, results) {
-        if (err) {
-            googleError(res, err);
-        } else {
-            res.status(200).send(results);
-        }
-    });
+app.get('/google/user', function(req, res) {
+    if (googleApi.checkSession(currentUser)) {
+        googleApi.getProfiles(function(err, results) {
+            if (err) {
+                res.status(200).send(false);
+            } else {
+                var profiles = results.map(function(r) {
+                    return { 'name' : r.name, 'id': r.id };
+                });
+
+                res.status(200).send({
+                    'name' : currentUser.google.name,
+                    'profiles' : profiles,
+                    'profile' : currentUser.google.defaultProfileID || profiles[0].id,
+                    'defaultProfileID' : currentUser.google.defaultProfileID
+                });
+            }
+        });
+    } else {
+        res.status(200).send(false)
+    }
 });
+
+// On failure, send the authorisation URL
+function googleError(response, err) {
+    if (err) {
+        response.status(401);
+        response.send({ error: String(err), authUrl: googleApi.authUrl });
+    }
+}
 
 // Start server
 var server = app.listen(global.PORT, function () {
