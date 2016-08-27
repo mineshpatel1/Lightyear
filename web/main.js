@@ -46,7 +46,11 @@ app.get('/', function (req, res) {
 });
 
 app.get('/login', function (req, res) {
-    res.sendFile(__dirname + "/app/views/login.html");
+    if (req.session.user) {
+        res.redirect('/');
+    } else {
+        res.sendFile(__dirname + "/app/views/login.html");
+    }
 });
 
 // Checks if session is authorised and redirects to login page if not
@@ -72,7 +76,7 @@ app.post('/auth/local', function (req, res) {
                 req.session.user = creds.email;
                 res.status(200).send('OK');
             } else {
-                res.status(401).send('Invalid password.')
+                res.status(401).send('Incorrect password for ' + creds.email + '.')
             }
         }
     });
