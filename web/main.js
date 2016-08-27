@@ -7,16 +7,21 @@ var express = require('express'),
     http = require('http'),
     https = require('https'),
     path = require('path'),
-    mongoose = require('mongoose'),
+    mongo = require('mongoose'),
     bodyParser = require('body-parser'),
     cookieParser = require('cookie-parser'),
-    session = require('express-session');
+    session = require('express-session'),
+    MongoStore = require('connect-mongo')(session);
+
+// Initialise MongoDB
+mongo.connect('mongodb://localhost/lyf');
 
 var sessionOpts = {
     saveUninitialized: false, // Saved new sessions
     resave: false, // Do not automatically write to the session store
     secret: global.auth.session_secret,
-    cookie : { httpOnly: true, maxAge: 50000 }
+    cookie : { httpOnly: true, maxAge: 50000 },
+    store: new MongoStore({ mongooseConnection: mongo.connection })
 }
 
 var app = express();
@@ -34,8 +39,6 @@ app.use(session(sessionOpts));
 var fbApi = require('./server/api/fb.js');
 var googleApi = require('./server/api/google.js');
 
-// Initialise MongoDB
-mongoose.connect('mongodb://localhost/lyf');
 var User = require('./server/models/users.js');
 
 // Application view routes

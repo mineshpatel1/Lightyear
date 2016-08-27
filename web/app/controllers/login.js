@@ -5,27 +5,26 @@ app.controller('login', function($scope, $timeout, $http, $mdToast, $mdDialog) {
 
     // Login function
     $scope.login = function() {
-        console.log($scope.loginForm.email);
-        // if (!$scope.loading) {
-        //     $scope.loading = true;
-        //     if ($scope.loginForm.$valid) {
-        //         var credentials = {
-        //             'email': $scope.email,
-        //             'password': $scope.password
-        //         };
-        //
-        //         $http.post('/auth/local', credentials).then(function(response) {
-        //             $scope.loading = false;
-        //             navigate('/');
-        //         }, function(err) {
-        //             $scope.loading = false;
-        //             showPopup('Login Failed', err.data);
-        //         });
-        //     } else {
-        //         $scope.loading = false;
-        //         showPopup('Login Failed', 'A valid email and password is required for login.');
-        //     }
-        // }
+        if (!$scope.loading) {
+            $scope.loading = true;
+            if ($scope.loginForm.$valid) {
+                var credentials = {
+                    'email': $scope.email,
+                    'password': $scope.password
+                };
+
+                $http.post('/auth/local', credentials).then(function(response) {
+                    $scope.loading = false;
+                    navigate('/');
+                }, function(err) {
+                    $scope.loading = false;
+                    showPopup('Login Failed', err.data);
+                });
+            } else {
+                $scope.loading = false;
+                showPopup('Login Failed', 'A valid email and password is required for login.');
+            }
+        }
     }
 
     $scope.register = function() {
