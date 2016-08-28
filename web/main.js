@@ -39,6 +39,7 @@ app.use(session(sessionOpts));
 
 var fbApi = require('./server/api/fb.js');
 var googleApi = require('./server/api/google.js');
+var twitterApi = require('./server/api/twitter.js');
 
 var User = require('./server/models/users.js');
 
@@ -49,6 +50,7 @@ app.get('/', function (req, res) {
     });
 });
 
+// Login page for the application
 app.get('/login', function (req, res) {
     if (req.session.user) {
         res.redirect('/');
@@ -65,14 +67,20 @@ function checkAuth(req, res, callback) {
         // Load user profile from the database
         User.findOne({ email : req.session.user }, function(err, user) {
             currentUser = user;
-            if (googleApi.checkSession(currentUser)) {
-                googleApi.client.setCredentials(currentUser.google.token);
-            }
-
             if (fbApi.checkSession(currentUser)) {
                 fbApi.accessToken = currentUser.facebook.token;
             }
-            callback();
+
+            if (googleApi.checkSession(currentUser)) {
+                googleApi.client.setCredentials(currentUser.google.token);
+                callback();
+            } else { // If it's expired, try to refresh the token
+                googleApi.refreshToken(currentUser, function() {
+                    callback();
+                }, function() {
+                    callback();
+                })
+            }
         });
     }
 }
@@ -267,6 +275,7 @@ app.get('/google/analytics', function(req, res) {
     });
 });
 
+// Get user information for the Google account
 app.get('/google/user', function(req, res) {
     if (googleApi.checkSession(currentUser)) {
         googleApi.getProfiles(function(err, results) {
@@ -297,6 +306,28 @@ function googleError(response, err) {
         response.send({ error: String(err), authUrl: googleApi.authUrl });
     }
 }
+
+// Authenticate the Twitter API via OAuth2
+app.get('/auth/twitter', function(req, res) {
+    twitterApi.requestToken(req.session, function(url) {
+        res.status(200).send(url);
+    }, function(err) {
+        res.status(500).send(err);
+    });
+});
+
+// Twitter callback for authentication
+app.get('/auth/twitter/callback', function(req, res) {
+    var requestToken = req.query.oauth_token;
+    var oauth_verifier = req.query.oauth_verifier;
+    req.session.twitterSecret;
+
+    twitterApi.getAccessToken(currentUser, requestToken, req.session.twitterSecret, oauth_verifier, function() {
+        res.redirect('/');
+        res.end();
+    });
+});
+
 
 // Start server
 var server = app.listen(global.PORT, function () {

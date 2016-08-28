@@ -18,6 +18,11 @@ var userSchema = new mongo.Schema({
         token: String,
         defaultPageID: String
     },
+    twitter: {
+        name: String,
+        accessToken: String,
+        accessTokenSecret: String
+    },
     created: Date,
     updated: Date
 });

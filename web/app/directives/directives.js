@@ -39,6 +39,12 @@ app.directive('connections', ['$http', '$q', 'Global', function($http, $q, Globa
 		        });
 			}
 
+			$scope.twitterLogin = function() {
+				$http.get('/auth/twitter').then(function(response) {
+					window.location.href = response.data;
+				});
+			}
+
 			// Check all of the authentication adn retrieve the necessary user data
 			function init() {
 				$scope.loading = true;

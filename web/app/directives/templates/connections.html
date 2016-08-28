@@ -36,6 +36,10 @@
                 </md-icon>
                 <md-button ng-if="!connections.facebook.name" class="md-primary md-raised" ng-click="fbLogin()">Link Account</md-button>
             </md-list-item>
+            <md-list-item>
+                <md-icon md-font-icon="fa-twitter" class="fa fa-2x" ng-class="connections.twitter.name ? 'md-primary' : ''"></md-icon>
+                <md-button ng-if="!connections.twitter.name" class="md-primary md-raised" ng-click="twitterLogin()">Link Account</md-button>
+            </md-list-item>
         </md-list>
     </md-content>
 </div>
