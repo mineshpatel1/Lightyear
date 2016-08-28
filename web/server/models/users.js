@@ -13,7 +13,9 @@ var userSchema = new mongo.Schema({
         defaultProfileID: String
     },
     facebook: {
-        token: Object,
+        id: String,
+        name: String,
+        token: String,
         defaultPageID: String
     },
     created: Date,

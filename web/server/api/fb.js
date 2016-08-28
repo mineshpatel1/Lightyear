@@ -22,6 +22,19 @@ function parseResponse(response, callback) {
 exports.fbURL = fbURL;
 exports.accessToken = accessToken;
 
+exports.checkSession = function(user) {
+    if (user) {
+        var token = user.facebook.token;
+        if (token) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
 exports.query = function(fields, callback) {
     if (exports.accessToken) {
         var path = '/me?fields=' + fields.join(',');
@@ -50,7 +63,55 @@ exports.query = function(fields, callback) {
     }
 }
 
-exports.exchangeToken = function(code) {
+exports.userInfo = function(onSuccess, onError) {
+    exports.query(['id', 'name', 'accounts'], function(err, results) {
+        if (err) {
+            onError({});
+        } else {
+            var pages = results.accounts.data.map(function(acc) {
+                return { 'access_token' : acc.access_token, 'id' : acc.id, 'name' : acc.name };
+            });
+
+            var output = {
+                'id' : results.id,
+                'name' : results.name,
+                'pages' : pages
+            }
+            onSuccess(output);
+        }
+    });
+}
+
+// Revokes Facebook access, destroying the user access token
+exports.revokeAccess = function(user, onSuccess, onError) {
+    if (user) {
+        var path = '/' + user.facebook.id + '/permissions';
+        path += '?access_token=' + exports.accessToken;
+        var options = {
+            host : 'graph.facebook.com',
+            path : path,
+            method: 'DELETE'
+        };
+
+        var req = https.request(options, function(res) {
+            if (res.statusCode == 200) {
+                user.facebook.token = false;
+                user.save(function(err) {
+                    if (err) {
+                        onError(err);
+                    } else {
+                        onSuccess();
+                    }
+                });
+            } else {
+                onError(res);
+            }
+        });
+        req.end();
+    }
+};
+
+exports.exchangeToken = function(code, user) {
     var path = '/v2.3/oauth/access_token?client_id=' + clientID;
     path += '&client_secret=' + clientSecret;
     path += '&redirect_uri=' + callbackURL;
@@ -66,7 +127,13 @@ exports.exchangeToken = function(code) {
         if (res.statusCode == 200) {
             parseResponse(res, function(results) {
                 exports.accessToken = results.access_token;
-                console.log('Set Facebook access token: ' + exports.accessToken);
+                user.facebook.token = results.access_token;
+
+                exports.userInfo(function(output) {
+                    user.facebook.id = output.id;
+                    user.facebook.name = output.name;
+                    user.save();
+                });
             });
         }
     });

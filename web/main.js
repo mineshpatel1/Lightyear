@@ -68,6 +68,10 @@ function checkAuth(req, res, callback) {
             if (googleApi.checkSession(currentUser)) {
                 googleApi.client.setCredentials(currentUser.google.token);
             }
+
+            if (fbApi.checkSession(currentUser)) {
+                fbApi.accessToken = currentUser.facebook.token;
+            }
             callback();
         });
     }
@@ -139,7 +143,7 @@ app.get('/auth/facebook', function(req, res) {
 
 app.get('/auth/facebook/callback', function(req, res) {
     var code = req.query.code;
-    fbApi.exchangeToken(code);
+    fbApi.exchangeToken(code, currentUser);
     res.redirect('/');
     res.end();
 });
@@ -174,15 +178,32 @@ app.get('/facebook/analytics/pages', function(req, res) {
     }
 });
 
-// Authenticate the Google API via OAuth2
-app.get('/auth/google', function(req, res) {
-    res.status(200).send(googleApi.authUrl);
+// Facebook user information
+app.get('/facebook/user', function(req, res) {
+    if (fbApi.checkSession(currentUser)) {
+        fbApi.userInfo(function(data) {
+            data.page = currentUser.defaultPageID || data.pages[0].id;
+            res.status(200).send(data);
+        }, function() {
+            res.status(200).send(false);
+        })
+    } else {
+        res.status(200).send(false)
+    }
+});
+
+// Revokes Facebook access
+app.get('/auth/facebook/revoke', function(req, res) {
+    fbApi.revokeAccess(currentUser, function() {
+        res.status(200).send('OK');
+    }, function() {
+        res.status(500).send('Could not revoke Facebook session.');
+    });
 });
 
 // Authenticate the Google API via OAuth2
-app.get('/auth/google/check', function(req, res) {
-    var check = googleApi.checkSession(currentUser);
-    res.status(200).send(check);
+app.get('/auth/google', function(req, res) {
+    res.status(200).send(googleApi.authUrl);
 });
 
 // Revokes Google access
@@ -192,30 +213,34 @@ app.get('/auth/google/revoke', function(req, res) {
     }, function() {
         res.status(500).send('Could not revoke Google session.');
     });
-
 });
 
 // Callback for Google authentication, setting authorisation credentials
 app.get('/auth/google/callback', function(req, res) {
     var code = req.query.code;
-    googleApi.client.getToken(code, function(err, tokens) {
-        currentUser.google.token = tokens;
-        currentUser.save();
-        googleApi.client.setCredentials(tokens);
-        googleApi.userInfo(function(err, googleUser) {
-            if (err) {
-                res.redirect('/');
-                res.end();
-            } else {
-                currentUser.google.id = googleUser.id;
-                currentUser.google.name = googleUser.name;
-                currentUser.save(function() {
+    if (code) {
+        googleApi.client.getToken(code, function(err, tokens) {
+            currentUser.google.token = tokens;
+            currentUser.save();
+            googleApi.client.setCredentials(tokens);
+            googleApi.userInfo(function(err, googleUser) {
+                if (err) {
                     res.redirect('/');
                     res.end();
-                });
-            }
+                } else {
+                    currentUser.google.id = googleUser.id;
+                    currentUser.google.name = googleUser.name;
+                    currentUser.save(function() {
+                        res.redirect('/');
+                        res.end();
+                    });
+                }
+            });
         });
-    });
+    } else {
+        res.redirect('/');
+        res.end();
+    }
 });
 
 // Query Google Analytics
@@ -248,7 +273,7 @@ app.get('/google/user', function(req, res) {
             }
         });
     } else {
-        res.status(200).send(false)
+        res.status(200).send(false);
     }
 });
 

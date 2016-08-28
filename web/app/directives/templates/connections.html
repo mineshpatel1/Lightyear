@@ -6,7 +6,7 @@
                 <md-icon md-font-icon="fa-google" class="fa fa-2x" ng-class="connections.google.name ? 'md-primary' : ''"></md-icon>
                 <md-input-container ng-if="connections.google.name" class="noErrors" style="margin-right: 10px;">
                     <label>Account</label>
-                    <input ng-model="connections.google.name" aria-label="Profile" disabled>
+                    <input ng-model="connections.google.name" aria-label="Account" disabled>
                 </md-input-container>
                 <md-input-container ng-if="connections.google.name" style="min-width: 200px;">
                     <label>Analytics Profile</label>
@@ -17,7 +17,24 @@
                 <md-icon ng-if="connections.google.name" class="fa md-secondary md-warn" md-font-icon="fa-times" ng-click="gaRevoke()" aria-label="Revoke">
                     <md-tooltip md-direction="right">Remove Account</md-tooltip>
                 </md-icon>
-                <md-button ng-if="!connections.google.name" class="md-secondary md-primary md-raised" ng-click="gaLogin()">Link Account</md-button>
+                <md-button ng-if="!connections.google.name" class="md-primary md-raised" ng-click="gaLogin()">Link Account</md-button>
+            </md-list-item>
+            <md-list-item>
+                <md-icon md-font-icon="fa-facebook-official" class="fa fa-2x" ng-class="connections.facebook.name ? 'md-primary' : ''"></md-icon>
+                <md-input-container ng-if="connections.facebook.name" class="noErrors" style="margin-right: 10px;">
+                    <label>Account</label>
+                    <input ng-model="connections.facebook.name" aria-label="Account" disabled>
+                </md-input-container>
+                <md-input-container ng-if="connections.facebook.name" style="min-width: 200px;">
+                    <label>Facebook Page</label>
+                    <md-select ng-model="connections.facebook.page" aria-label="Profile">
+                        <md-option ng-repeat="page in connections.facebook.pages" ng-value="page.id">{{ page.name }}</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-icon ng-if="connections.facebook.name" class="fa md-secondary md-warn" md-font-icon="fa-times" ng-click="fbRevoke()" aria-label="Revoke">
+                    <md-tooltip md-direction="right">Remove Account</md-tooltip>
+                </md-icon>
+                <md-button ng-if="!connections.facebook.name" class="md-primary md-raised" ng-click="fbLogin()">Link Account</md-button>
             </md-list-item>
         </md-list>
     </md-content>

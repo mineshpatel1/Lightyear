@@ -4,7 +4,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     $scope.fbPages = [];
     $scope.conns = {
         google: {},
-        facbeook: {}
+        facebook: {}
     };
 
     // Runs on page load
@@ -46,7 +46,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     }
 
     $scope.test = function() {
-        console.log($scope.conns.google);
+        console.log($scope.conns);
     }
 
     // Shows dialogue with all possible connections
