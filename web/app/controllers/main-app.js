@@ -109,7 +109,15 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     function DialogueController($scope, $mdDialog, conns) {
         $scope.conns = conns;
         $scope.close = function() {
-            $mdDialog.hide($scope.conns);
+            $scope.loading = true;
+            $http.post('/settings/connections', $scope.conns).then(function() {
+                $scope.loading = false;
+                $mdDialog.hide($scope.conns);
+            }, function() {
+                $scope.loading = false;
+                $mdDialog.hide($scope.conns);
+            });
+
         };
     }
 

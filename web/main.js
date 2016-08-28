@@ -137,6 +137,19 @@ app.post('/auth/local/register', function(req, res) {
     });
 })
 
+app.post('/settings/connections', function(req, res) {
+    currentUser.google.defaultProfileID = req.body.google.profile;
+    currentUser.facebook.defaultPageID = req.body.facebook.page;
+    currentUser.save(function(err) {
+        if (err) {
+            res.status(500).send('Could not save default connection settings.');
+        } else {
+            res.status(200).send('OK');
+        }
+    });
+})
+
+// Login to Facebook
 app.get('/auth/facebook', function(req, res) {
     res.status(200).send(fbApi.fbURL);
 });
@@ -182,7 +195,7 @@ app.get('/facebook/analytics/pages', function(req, res) {
 app.get('/facebook/user', function(req, res) {
     if (fbApi.checkSession(currentUser)) {
         fbApi.userInfo(function(data) {
-            data.page = currentUser.defaultPageID || data.pages[0].id;
+            data.page = currentUser.facebook.defaultPageID || data.pages[0].id;
             res.status(200).send(data);
         }, function() {
             res.status(200).send(false);
