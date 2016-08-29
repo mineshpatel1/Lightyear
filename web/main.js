@@ -72,7 +72,10 @@ function checkAuth(req, res, callback) {
             }
 
             if (googleApi.checkSession(currentUser)) {
-                googleApi.client.setCredentials(currentUser.google.token);
+                googleApi.client.setCredentials({
+                    "access_token" : currentUser.google.token.access_token,
+                    "refresh_token" : currentUser.google.token.refresh_token
+                });
                 callback();
             } else { // If it's expired, try to refresh the token
                 googleApi.refreshToken(currentUser, function() {
@@ -81,6 +84,7 @@ function checkAuth(req, res, callback) {
                     callback();
                 })
             }
+            callback();
         });
     }
 }
@@ -243,7 +247,10 @@ app.get('/auth/google/callback', function(req, res) {
         googleApi.client.getToken(code, function(err, tokens) {
             currentUser.google.token = tokens;
             currentUser.save();
-            googleApi.client.setCredentials(tokens);
+            googleApi.client.setCredentials({
+                "access_token": tokens.access_token,
+                "refresh_token" : tokens.refresh_token
+            });
             googleApi.userInfo(function(err, googleUser) {
                 if (err) {
                     res.redirect('/');
