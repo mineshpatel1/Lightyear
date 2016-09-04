@@ -8,6 +8,8 @@ var twitter = new twitterAPI({
 });
 
 exports.authUrl = '';
+
+// Requests an access token from Twitter
 exports.requestToken = function(session, onSuccess, onError) {
     twitter.getRequestToken(function(error, requestToken, requestTokenSecret, results){
         if (error) {
@@ -24,6 +26,7 @@ exports.requestToken = function(session, onSuccess, onError) {
     });
 }
 
+// Gets an access token for Twitter authentication
 exports.getAccessToken = function(user, requestToken, requestTokenSecret, oauth_verifier, callback) {
     twitter.getAccessToken(requestToken, requestTokenSecret, oauth_verifier, function(error, accessToken, accessTokenSecret, results) {
         if (error) {
@@ -31,17 +34,47 @@ exports.getAccessToken = function(user, requestToken, requestTokenSecret, oauth_
         } else {
             user.twitter.accessToken = accessToken;
             user.twitter.accessTokenSecret = accessTokenSecret;
-            user.save(function() {
-                callback();
+            twitter.verifyCredentials(accessToken, accessTokenSecret, {}, function(error, data, response) {
+                if (error) {
+                    callback();
+                } else {
+                    user.twitter.id = data.id;
+                    user.twitter.handle = data.screen_name;
+                    user.twitter.name = data.name;
+                    user.save(function() {
+                        callback();
+                    });
+                }
             });
+
         }
     });
 };
 
+// Checks the validity of a Twitter session and returns some user information
 exports.checkSession = function(user, callback) {
     if (user) {
-        twitter.verifyCredentials
+        twitter.verifyCredentials(user.twitter.accessToken, user.twitter.accessTokenSecret, {}, function(error, data, response) {
+            if (error) {
+                console.log('Could not verify Twitter credentials');
+                callback(true);
+            } else {
+                callback(false, data);
+            }
+        });
     } else {
-        return callback(false);
+        return callback(true);
     }
+}
+
+// Invalidates a Twitter token, revoking access
+exports.revokeAccess = function(user, onSuccess, onError) {
+    user.twitter = {};
+    user.save(function(err) {
+        if (err) {
+            onError(err)
+        } else {
+            onSuccess();
+        }
+    });
 }

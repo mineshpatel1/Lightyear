@@ -4,6 +4,7 @@ global.PORT = 8080;
 global.auth = require(__dirname + '/config/auth.json');
 
 var express = require('express'),
+    q = require('q'),
     http = require('http'),
     https = require('https'),
     path = require('path'),
@@ -66,25 +67,51 @@ function checkAuth(req, res, callback) {
     } else {
         // Load user profile from the database
         User.findOne({ email : req.session.user }, function(err, user) {
-            currentUser = user;
-            if (fbApi.checkSession(currentUser)) {
-                fbApi.accessToken = currentUser.facebook.token;
-            }
+            if (err) {
+                console.log('User could not be found in database');
+                callback();
+            } else {
+                var promises = [];
+                currentUser = user; // Set global user
 
-            if (googleApi.checkSession(currentUser)) {
+                // Facebook session check
+                if (!fbApi.checkSession(currentUser)) {
+                    currentUser.facebook.token = false;
+                }
+
+                // Google session check
+                var googleDef = q.defer(); // Wait on asynchronous functions
+                promises.push(googleDef.promise);
+
                 googleApi.client.setCredentials({
                     "access_token" : currentUser.google.token.access_token,
                     "refresh_token" : currentUser.google.token.refresh_token
                 });
-                callback();
-            } else { // If it's expired, try to refresh the token
-                googleApi.refreshToken(currentUser, function() {
-                    callback();
-                }, function() {
+
+                if (googleApi.checkSession(currentUser)) {
+                    googleDef.resolve();
+                } else { // If it's expired, try to refresh the token
+                    googleApi.refreshToken(currentUser, function() {
+                        googleDef.resolve();
+                    }, function() {
+                        googleDef.resolve();
+                    })
+                }
+
+                var twitterDef = q.defer();
+                promises.push(twitterDef.promise);
+                twitterApi.checkSession(currentUser, function(error, data) {
+                    if (error) {
+                        currentUser.twitter = {};
+                        currentUser.save();
+                    }
+                    twitterDef.resolve();
+                })
+
+                q.allSettled(promises).then(function() {
                     callback();
                 })
             }
-            callback();
         });
     }
 }
@@ -206,7 +233,7 @@ app.get('/facebook/analytics/pages', function(req, res) {
 // Facebook user information
 app.get('/facebook/user', function(req, res) {
     if (fbApi.checkSession(currentUser)) {
-        fbApi.userInfo(function(data) {
+        fbApi.userInfo(currentUser, function(data) {
             data.page = currentUser.facebook.defaultPageID || data.pages[0].id;
             res.status(200).send(data);
         }, function() {
@@ -335,6 +362,28 @@ app.get('/auth/twitter/callback', function(req, res) {
     });
 });
 
+// Retrieved Twitter user information
+app.get('/twitter/user', function(req, res) {
+    if (currentUser.twitter.accessToken) {
+        var twitterUser = {
+            id : currentUser.twitter.id,
+            name : currentUser.twitter.name,
+            handle : currentUser.twitter.handle
+        }
+        res.status(200).send(twitterUser);
+    } else {
+        res.status(500).send('Twitter not authenticated.');
+    }
+});
+
+// Revokes Facebook access
+app.get('/auth/twitter/revoke', function(req, res) {
+    twitterApi.revokeAccess(currentUser, function(data) {
+        res.status(200).send(data);
+    }, function() {
+        res.status(500).send('Could not revoke Twitter session.');
+    });
+});
 
 // Start server
 var server = app.listen(global.PORT, function () {

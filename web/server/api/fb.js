@@ -20,7 +20,7 @@ function parseResponse(response, callback) {
 }
 
 exports.fbURL = fbURL;
-exports.accessToken = accessToken;
+// exports.accessToken = accessToken;
 
 exports.checkSession = function(user) {
     if (user) {
@@ -35,36 +35,32 @@ exports.checkSession = function(user) {
     }
 }
 
-exports.query = function(fields, callback) {
-    if (exports.accessToken) {
-        var path = '/me?fields=' + fields.join(',');
-        path += '&access_token=' + exports.accessToken;
+exports.query = function(accessToken, fields, callback) {
+    var path = '/me?fields=' + fields.join(',');
+    path += '&access_token=' + accessToken;
 
-        var options = {
-            host : 'graph.facebook.com',
-            path : path,
-            method : 'GET'
+    var options = {
+        host : 'graph.facebook.com',
+        path : path,
+        method : 'GET'
+    }
+
+    var req = https.request(options, function(res) {
+        if (res.statusCode == 200) {
+            parseResponse(res, function(results) {
+                callback(false, results);
+            })
+        } else {
+            callback(res, {});
         }
 
-        var req = https.request(options, function(res) {
-            if (res.statusCode == 200) {
-                parseResponse(res, function(results) {
-                    callback(false, results);
-                })
-            } else {
-                callback(res, {});
-            }
-
-        });
-        req.end();
-        return true;
-    } else {
-        return false;
-    }
+    });
+    req.end();
+    return true;
 }
 
-exports.userInfo = function(onSuccess, onError) {
-    exports.query(['id', 'name', 'accounts'], function(err, results) {
+exports.userInfo = function(user, onSuccess, onError) {
+    exports.query(user.facebook.token, ['id', 'name', 'accounts'], function(err, results) {
         if (err) {
             onError({});
         } else {

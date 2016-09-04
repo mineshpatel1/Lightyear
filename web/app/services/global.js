@@ -1,20 +1,9 @@
 app.factory('Global', ['$http', '$q', function($http, $q) {
 	var fetchConnections = function(conns, success) {
-		// if (!conns.google.name) {
-		// 	$http.get('/google/user').then(function(response) {
-		// 		if (response.data) {
-		// 			conns.google = response.data;
-		// 			success();
-		// 		} else {
-		// 			success();
-		// 		}
-		// 	}, success);
-		// } else {
-		// 	success();
-		// }
 		var authCalls = [];
 		authCalls.push(checkGoogle(conns));
 		authCalls.push(checkFB(conns));
+		authCalls.push(checkTwitter(conns));
 		$q.all(authCalls).then(function() {
 			success();
 		});
@@ -47,6 +36,26 @@ app.factory('Global', ['$http', '$q', function($http, $q) {
 			$http.get('/facebook/user').then(function(response) {
 				if (response.data) {
 					conns.facebook = response.data;
+					deferred.resolve();
+				} else {
+					deferred.resolve();
+				}
+			}, function() {
+				deferred.resolve();
+			});
+		} else {
+			deferred.resolve();
+		}
+
+		return deferred.promise;
+	}
+
+	function checkTwitter(conns) {
+		var deferred = $q.defer();
+		if (!conns.twitter.name) {
+			$http.get('/twitter/user').then(function(response) {
+				if (response.data) {
+					conns.twitter = response.data;
 					deferred.resolve();
 				} else {
 					deferred.resolve();

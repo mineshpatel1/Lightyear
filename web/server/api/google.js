@@ -70,8 +70,8 @@ exports.refreshToken = function(user, onSuccess, onError) {
             console.log(err);
             onError();
         } else {
-            currentUser.google.token = tokens;
-            currentUser.save(); // Asynchronously save teh token
+            user.google.token = tokens;
+            user.save(); // Asynchronously save the token
             onSuccess();
         }
     });

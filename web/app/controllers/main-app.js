@@ -4,7 +4,8 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     $scope.fbPages = [];
     $scope.conns = {
         google: {},
-        facebook: {}
+        facebook: {},
+        twitter: {}
     };
 
     // Runs on page load

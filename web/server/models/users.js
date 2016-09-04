@@ -19,7 +19,9 @@ var userSchema = new mongo.Schema({
         defaultPageID: String
     },
     twitter: {
+        id: String,
         name: String,
+        handle: String,
         accessToken: String,
         accessTokenSecret: String
     },
