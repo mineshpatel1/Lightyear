@@ -1,4 +1,5 @@
 https = require('https');
+q = require('q');
 
 var accessToken = '';
 var clientID = global.auth.facebook.client_id,
@@ -20,7 +21,6 @@ function parseResponse(response, callback) {
 }
 
 exports.fbURL = fbURL;
-// exports.accessToken = accessToken;
 
 exports.checkSession = function(user) {
     if (user) {
@@ -82,7 +82,7 @@ exports.userInfo = function(user, onSuccess, onError) {
 exports.revokeAccess = function(user, onSuccess, onError) {
     if (user) {
         var path = '/' + user.facebook.id + '/permissions';
-        path += '?access_token=' + exports.accessToken;
+        path += '?access_token=' + user.facebook.token;
         var options = {
             host : 'graph.facebook.com',
             path : path,
@@ -100,14 +100,15 @@ exports.revokeAccess = function(user, onSuccess, onError) {
                     }
                 });
             } else {
-                onError(res);
+                console.log('Error revoking Facebook access');
+                onError();
             }
         });
         req.end();
     }
 };
 
-exports.exchangeToken = function(code, user) {
+exports.exchangeToken = function(code, user, callback) {
     var path = '/v2.3/oauth/access_token?client_id=' + clientID;
     path += '&client_secret=' + clientSecret;
     path += '&redirect_uri=' + callbackURL;
@@ -122,15 +123,18 @@ exports.exchangeToken = function(code, user) {
     var req = https.request(options, function (res) {
         if (res.statusCode == 200) {
             parseResponse(res, function(results) {
-                exports.accessToken = results.access_token;
                 user.facebook.token = results.access_token;
 
                 exports.userInfo(user, function(output) {
                     user.facebook.id = output.id;
                     user.facebook.name = output.name;
-                    user.save();
-                });
+                    user.save(function() {
+                        callback();
+                    });
+                }, callback);
             });
+        } else {
+            callback();
         }
     });
     req.end();

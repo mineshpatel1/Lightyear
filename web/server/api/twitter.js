@@ -1,4 +1,5 @@
 // Twitter Authentication
+var https = require('https');
 var twitterAPI = require('node-twitter-api');
 var twitter = new twitterAPI({
     consumerKey: global.auth.twitter.consumer_key,
@@ -56,7 +57,6 @@ exports.checkSession = function(user, callback) {
     if (user) {
         twitter.verifyCredentials(user.twitter.accessToken, user.twitter.accessTokenSecret, {}, function(error, data, response) {
             if (error) {
-                console.log('Could not verify Twitter credentials');
                 callback(true);
             } else {
                 callback(false, data);

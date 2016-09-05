@@ -40,7 +40,10 @@ app.directive('connections', ['$http', '$q', 'Global', function($http, $q, Globa
 			}
 
 			$scope.twitterRevoke = function() {
-				$scope.connections.twitter = {};
+				$http.get('/auth/twitter/revoke').then(function(response) {
+					$scope.loading = false;
+		            $scope.connections.twitter = {};
+		        }, genError);
 			}
 
 			$scope.twitterLogin = function() {

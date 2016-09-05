@@ -199,9 +199,19 @@ app.get('/auth/facebook', function(req, res) {
 
 app.get('/auth/facebook/callback', function(req, res) {
     var code = req.query.code;
-    fbApi.exchangeToken(code, currentUser);
-    res.redirect('/');
-    res.end();
+    fbApi.exchangeToken(code, currentUser, function() {
+        res.redirect('/');
+        res.end();
+    });
+});
+
+// Revokes Facebook access
+app.get('/auth/facebook/revoke', function(req, res) {
+    fbApi.revokeAccess(currentUser, function() {
+        res.status(200).send('OK');
+    }, function() {
+        res.status(500).send('Could not revoke Facebook session.');
+    });
 });
 
 // Facebook query
@@ -246,15 +256,6 @@ app.get('/facebook/user', function(req, res) {
     } else {
         res.status(200).send(false)
     }
-});
-
-// Revokes Facebook access
-app.get('/auth/facebook/revoke', function(req, res) {
-    fbApi.revokeAccess(currentUser, function() {
-        res.status(200).send('OK');
-    }, function() {
-        res.status(500).send('Could not revoke Facebook session.');
-    });
 });
 
 // Authenticate the Google API via OAuth2
@@ -366,6 +367,15 @@ app.get('/auth/twitter/callback', function(req, res) {
     });
 });
 
+// Revokes Facebook access
+app.get('/auth/twitter/revoke', function(req, res) {
+    twitterApi.revokeAccess(currentUser, function(data) {
+        res.status(200).send(data);
+    }, function() {
+        res.status(500).send('Could not revoke Twitter session.');
+    });
+});
+
 // Retrieved Twitter user information
 app.get('/twitter/user', function(req, res) {
     if (currentUser.twitter.accessToken) {
@@ -376,17 +386,8 @@ app.get('/twitter/user', function(req, res) {
         }
         res.status(200).send(twitterUser);
     } else {
-        res.status(500).send('Twitter not authenticated.');
+        res.status(200).send(false);
     }
-});
-
-// Revokes Facebook access
-app.get('/auth/twitter/revoke', function(req, res) {
-    twitterApi.revokeAccess(currentUser, function(data) {
-        res.status(200).send(data);
-    }, function() {
-        res.status(500).send('Could not revoke Twitter session.');
-    });
 });
 
 // Start server
