@@ -83,7 +83,7 @@ function checkAuth(req, res, callback) {
                 var googleDef = q.defer(); // Wait on asynchronous functions
                 promises.push(googleDef.promise);
 
-                if (currentUser.google) {
+                if (currentUser.google.token) {
                     googleApi.client.setCredentials({
                         "access_token" : currentUser.google.token.access_token,
                         "refresh_token" : currentUser.google.token.refresh_token

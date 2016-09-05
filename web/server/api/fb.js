@@ -125,7 +125,7 @@ exports.exchangeToken = function(code, user) {
                 exports.accessToken = results.access_token;
                 user.facebook.token = results.access_token;
 
-                exports.userInfo(function(output) {
+                exports.userInfo(user, function(output) {
                     user.facebook.id = output.id;
                     user.facebook.name = output.name;
                     user.save();
