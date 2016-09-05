@@ -83,19 +83,23 @@ function checkAuth(req, res, callback) {
                 var googleDef = q.defer(); // Wait on asynchronous functions
                 promises.push(googleDef.promise);
 
-                googleApi.client.setCredentials({
-                    "access_token" : currentUser.google.token.access_token,
-                    "refresh_token" : currentUser.google.token.refresh_token
-                });
+                if (currentUser.google) {
+                    googleApi.client.setCredentials({
+                        "access_token" : currentUser.google.token.access_token,
+                        "refresh_token" : currentUser.google.token.refresh_token
+                    });
 
-                if (googleApi.checkSession(currentUser)) {
+                    if (googleApi.checkSession(currentUser)) {
+                        googleDef.resolve();
+                    } else { // If it's expired, try to refresh the token
+                        googleApi.refreshToken(currentUser, function() {
+                            googleDef.resolve();
+                        }, function() {
+                            googleDef.resolve();
+                        })
+                    }
+                } else {
                     googleDef.resolve();
-                } else { // If it's expired, try to refresh the token
-                    googleApi.refreshToken(currentUser, function() {
-                        googleDef.resolve();
-                    }, function() {
-                        googleDef.resolve();
-                    })
                 }
 
                 var twitterDef = q.defer();
