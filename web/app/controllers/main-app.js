@@ -22,33 +22,12 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
         window.location.href = link;
     };
 
-    // Checks all of the authentication for the different integrations
-    // function checkLogins() {
-    //     var urlCalls = [];
-    //     var deferred = $q.defer();
-    //
-    //     // Check Facebook auth by attempting to retrieve pages
-    //     var fb = $http.get('/facebook/analytics/pages').then(function(response) {
-    //         $scope.logins.fb = true;
-    //         $scope.fbPages = response.data;
-    //         if ($scope.fbPages.length > 0)
-    //             $scope.fbPage = $scope.fbPages[0].id;
-    //     }, function(err) {
-    //         console.log(err.data.error);
-    //         if (err.data.hasOwnProperty('authUrl'))
-    //             $scope.logins.fb = false;
-    //     });
-    //     urlCalls.push(fb);
-    //
-    //     $q.all(urlCalls).then(function() {
-    //         deferred.resolve();
-    //     });
-    //
-    //     return deferred.promise;
-    // }
-
     $scope.test = function() {
-        console.log($scope.conns);
+        $http.post('/postgre/query', { query : "select * from f_twitter_daily" }).then(function(response) {
+            console.log(response);
+        }, function(response) {
+            console.log(response);
+        });
     }
 
     // Shows dialogue with all possible connections

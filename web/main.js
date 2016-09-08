@@ -114,7 +114,16 @@ function checkAuth(req, res, callback) {
                         }
                     }
                     twitterDef.resolve();
-                })
+                });
+
+                // Set the schema search path
+                if (currentUser.postgre.defaultSchema) {
+                    var pgDef = q.defer();
+                    promises.push(pgDef.promise);
+                    pgApi.setSchema(currentUser.postgre.defaultSchema, currentUser, function(err) {
+                        pgDef.resolve();
+                    });
+                }
 
                 q.allSettled(promises).then(function() {
                     callback();
@@ -187,6 +196,9 @@ app.post('/auth/local/register', function(req, res) {
 app.post('/settings/connections', function(req, res) {
     currentUser.google.defaultProfileID = req.body.google.profile;
     currentUser.facebook.defaultPageID = req.body.facebook.page;
+    currentUser.postgre.defaultSchema = req.body.postgre.schema;
+    pgApi.setSchema(currentUser.postgre.defaultSchema, currentUser); // Sets the schema search path
+
     currentUser.save(function(err) {
         if (err) {
             res.status(500).send('Could not save default connection settings.');
@@ -394,7 +406,8 @@ app.get('/postgre/user', function(req, res) {
                 port : currentUser.postgre.port,
                 db : currentUser.postgre.db,
                 defaultSchema : currentUser.postgre.defaultSchema,
-                schemas : schemas
+                schemas : schemas,
+                schema : currentUser.postgre.defaultSchema || schemas[0]
             }
             res.status(200).send(dbUser);
         }
@@ -404,9 +417,13 @@ app.get('/postgre/user', function(req, res) {
 // Retrieved PostgreSQL user/db information
 app.post('/postgre/user', function(req, res) {
     var db = req.body;
-    var sampleUser = { postgre: db };
+
+    // Encrypt user entered password
+    db.password = currentUser.encrypt(db.password);
+    var sampleUser = { postgre: db, decrypt: currentUser.decrypt }; // Create a dummy user to test connectivity
     pgApi.checkSession(sampleUser, function(err, data) {
         if (err) {
+            console.log(err);
             res.status(500).send(err);
         } else {
             currentUser.postgre = db;
@@ -428,6 +445,18 @@ app.delete('/postgre/user', function(req, res) {
             res.status(200).send();
         }
     });
+});
+
+// Query PostgreSQL database
+app.post('/postgre/query', function(req, res) {
+    var query = req.body.query;
+    pgApi.executeSQL(query, currentUser, function(err, data) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.status(200).send(data);
+        }
+    })
 });
 
 // Start server

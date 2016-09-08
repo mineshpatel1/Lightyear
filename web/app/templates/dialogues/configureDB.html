@@ -2,23 +2,28 @@
     <form>
         <md-toolbar>
             <div class="md-toolbar-tools">
-                <h2>Configure Database</h2>
+                <h2>Configure Database (PostgreSQL)</h2>
             </div>
         </md-toolbar>
+        <md-progress-linear md-mode="indeterminate" ng-if="loading"></md-progress-linear>
         <md-dialog-content>
             <div class="md-dialog-content">
-                <md-progress-linear md-mode="indeterminate" ng-if="loading"></md-progress-linear>
+                <div style="margin-bottom: 10px;"><b>Warning:</b> Credentials will be encrypted and stored.</div>
                 <div>
-                    <md-input-container flex="50">
-                        <label>Username</label>
+                    <md-input-container flex="50" class="noErrors">
+                        <label>Database User</label>
                         <input ng-model="db.username">
                     </md-input-container>
+                    <md-input-container flex="50" class="noErrors">
+                        <label>Password</label>
+                        <input type="password" ng-model="db.password">
+                    </md-input-container>
+                </div>
+                <div>
                     <md-input-container flex="50">
                         <label>Database</label>
                         <input ng-model="db.db">
                     </md-input-container>
-                </div>
-                <div>
                     <md-input-container flex="50">
                         <label>Hostname</label>
                         <input ng-model="db.hostname">

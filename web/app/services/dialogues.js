@@ -128,11 +128,16 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
                         $scope.error = 'Hostname is unreachable.';
                         break;
                     case 'ENOTFOUND':
-                        $scope.error = 'Hostname/Database not found.';
+                        $scope.error = 'Hostname or database not found.';
                         break;
                     case 'ETIMEDOUT':
                         $scope.error = 'Connection timed out.';
                         break;
+                    case '28P01':
+                        $scope.error = 'Incorrect username or password.';
+                        break;
+                    case '3D000':
+                        $scope.error = 'Database does not exist.'
                     default:
                         $scope.error = 'Could not connect to the database.';
                         break;
