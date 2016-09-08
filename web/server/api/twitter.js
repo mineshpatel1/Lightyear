@@ -37,6 +37,7 @@ exports.getAccessToken = function(user, requestToken, requestTokenSecret, oauth_
             user.twitter.accessTokenSecret = accessTokenSecret;
             twitter.verifyCredentials(accessToken, accessTokenSecret, {}, function(error, data, response) {
                 if (error) {
+                    console.log('Could not get Twitter access token: ' + error);
                     callback();
                 } else {
                     user.twitter.id = data.id;
@@ -57,7 +58,7 @@ exports.checkSession = function(user, callback) {
     if (user) {
         twitter.verifyCredentials(user.twitter.accessToken, user.twitter.accessTokenSecret, {}, function(error, data, response) {
             if (error) {
-                callback(true);
+                callback(error);
             } else {
                 callback(false, data);
             }

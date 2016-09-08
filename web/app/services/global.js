@@ -1,9 +1,10 @@
-app.factory('Global', ['$http', '$q', function($http, $q) {
+app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog) {
 	var fetchConnections = function(conns, success) {
 		var authCalls = [];
 		authCalls.push(checkGoogle(conns));
 		authCalls.push(checkFB(conns));
 		authCalls.push(checkTwitter(conns));
+		authCalls.push(checkPostgre(conns));
 		$q.all(authCalls).then(function() {
 			success();
 		});
@@ -56,6 +57,26 @@ app.factory('Global', ['$http', '$q', function($http, $q) {
 			$http.get('/twitter/user').then(function(response) {
 				if (response.data) {
 					conns.twitter = response.data;
+					deferred.resolve();
+				} else {
+					deferred.resolve();
+				}
+			}, function() {
+				deferred.resolve();
+			});
+		} else {
+			deferred.resolve();
+		}
+
+		return deferred.promise;
+	}
+
+	function checkPostgre(conns) {
+		var deferred = $q.defer();
+		if (!conns.postgre.name) {
+			$http.get('/postgre/user').then(function(response) {
+				if (response.data) {
+					conns.postgre = response.data;
 					deferred.resolve();
 				} else {
 					deferred.resolve();

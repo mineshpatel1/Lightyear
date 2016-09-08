@@ -6,6 +6,13 @@ var userSchema = new mongo.Schema({
     displayName: String,
     email: { type: String, required: true, unique: true },
     password: String,
+    postgre: {
+        db: String,
+        hostname: String,
+        username: String,
+        port: Number,
+        defaultSchema: String
+    },
     google: {
         id: String,
         name: String,
