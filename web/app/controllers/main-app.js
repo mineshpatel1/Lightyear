@@ -9,12 +9,15 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
         postgre: {}
     };
 
+    $scope.datasets = [];
+
     // Runs on page load
     function init() {
         Global.fetchConnections($scope.conns, function() {
-            $scope.initialised = true;
-        }, function() {
-            console.log('Failed to retrieve connections');
+            Global.fetchDatasets(function(datasets) {
+                $scope.initialised = true;
+                $scope.datasets = datasets;
+            })
         })
     }
 
@@ -33,6 +36,11 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     // Shows dialogue with all possible connections
     $scope.showConnections = function(ev) {
         Dialogues.showConnections(ev, $scope.conns);
+    }
+
+    // Manage the datasets via a dialogue
+    $scope.manageDatasets = function(ev) {
+        Dialogues.manageDatasets(ev, $scope.datasets, $scope.conns);
     }
 
     // Log off from the application

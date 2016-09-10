@@ -13,7 +13,16 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
 
         <title>Social Media App</title>
-        <script>var app = angular.module('App', ['ngMaterial', 'ngAnimate']);</script>
+        <script>
+            var app = angular.module('App', ['ngMaterial', 'ngAnimate']).config(function($mdThemingProvider) {
+                $mdThemingProvider.theme('default')
+                    .primaryPalette('indigo')
+                    .accentPalette('green', {
+            			default: '500'
+            		});
+            });
+        </script>
+        <script src="/app/js/sma.js"></script>
         <script src="/app/controllers/main-app.js"></script>
         <script src="/app/services/global.js"></script>
         <script src="/app/services/dialogues.js"></script>
@@ -29,6 +38,10 @@
                 <md-button class="md-icon-button" aria-label="Connectivity" ng-click="showConnections($event)">
                     <md-tooltip>Connections</md-tooltip>
                     <md-icon md-font-icon="fa-plug" class="fa fa-2x"></md-icon>
+                </md-button>
+                <md-button class="md-icon-button" aria-label="Datasets" ng-click="manageDatasets($event)">
+                    <md-tooltip>Datasets</md-tooltip>
+                    <md-icon md-font-icon="fa-table" class="fa fa-2x"></md-icon>
                 </md-button>
                 <span flex></span>
                 <md-button class="md-icon-button" aria-label="Sign Out" ng-click="logout()">

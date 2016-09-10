@@ -459,6 +459,44 @@ app.post('/postgre/query', function(req, res) {
     })
 });
 
+// Generic query, server can decide from the object how to proceed
+app.post('/query', function(req, res) {
+    var dataReq = req.body;
+    switch(dataReq.Type) {
+        case 'db_pg':
+            pgApi.setSchema(dataReq.Query.schema, currentUser, function(err) {
+                pgApi.executeSQL(dataReq.Query.sql, currentUser, function(err, data) {
+                    if (err) {
+                        res.status(500).send(err);
+                    } else {
+                        res.status(200).send(data.rows);
+                    }
+                })
+            });
+            break;
+        default:
+            res.status(200).send();
+            break;
+    }
+});
+
+// Get user's datasets
+app.get('/datasets', function(req, res) {
+    res.status(200).send(currentUser.datasets);
+});
+
+// Save user's datasets
+app.post('/datasets', function(req, res) {
+    currentUser.datasets = req.body;
+    currentUser.save(function(err) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.status(200).send();
+        }
+    })
+});
+
 // Start server
 var server = app.listen(global.PORT, function () {
     var host = server.address().address

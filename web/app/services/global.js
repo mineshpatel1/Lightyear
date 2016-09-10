@@ -91,8 +91,23 @@ app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog
 		return deferred.promise;
 	}
 
+	var fetchDatasets = function(callback) {
+		$http.get('/datasets').then(function(response) {
+			var datasets = [];
+			response.data.forEach(function(ds) {
+				var newDS = new sma.Dataset(false, ds.Type, ds.Name, ds.Query);
+				datasets.push(newDS);
+			});
+			callback(datasets);
+		}, function(response) {
+			console.log(response.data);
+			callback();
+		})
+	}
+
 	var Global = {
-		fetchConnections : fetchConnections
+		fetchConnections : fetchConnections,
+		fetchDatasets : fetchDatasets
 	};
 	return Global;
 }]);

@@ -151,6 +151,7 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
         }
     }
 
+    // Show the database configuration modal
     var showDBConfig = function(ev, inpDB, callback) {
         $mdDialog.show({
             controller: dbConfig,
@@ -168,9 +169,111 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
         });
     }
 
+    function manageDatasets($scope, $mdDialog, datasets, conns) {
+        $scope.datasets = datasets;
+        $scope.conns = conns;
+        
+        $scope.addDataset = function(ev) {
+            Dialogues.editDataset(ev, false, $scope.conns, function(dataset) {
+                $scope.datasets.push(dataset);
+                Dialogues.manageDatasets(ev, $scope.datasets, $scope.conns);
+            });
+        }
+
+        // Opens the dataset for editing
+        $scope.editDataset = function(ev, dataset, i) {
+            var idx = i;
+            Dialogues.editDataset(ev, dataset, $scope.conns, function(dataset) {
+                $scope.datasets[idx] = dataset;
+                Dialogues.manageDatasets(ev, $scope.datasets, $scope.conns);
+            });
+        }
+
+        // Removes the dataset from the array
+        $scope.removeDataset = function(i) {
+            $scope.datasets.splice(i, 1);
+        }
+
+        $scope.close = function() {
+            $http.post('/datasets', $scope.datasets.map(function(ds) {
+                return ds.noData();
+            }));
+            $mdDialog.hide($scope.datasets);
+        }
+    }
+
+    var showDataManager = function(ev, inpDS, conns, callback) {
+        $mdDialog.show({
+            controller: manageDatasets,
+            templateUrl: '/app/templates/dialogues/manageDatasets.html',
+            parent: angular.element(document.body),
+            targetEvent: ev,
+            locals: {
+                datasets : inpDS,
+                conns: conns,
+                callback : callback
+            }
+        }).then(function(datasets) {
+            if (callback) {
+                callback(datasets);
+            }
+        });
+    }
+
+    function editDataset($scope, $mdDialog, dataset, conns) {
+        if (!dataset) {
+            dataset = new sma.Dataset(conns);
+        }
+        $scope.original = angular.copy(dataset);
+        $scope.dataset = dataset;
+        $scope.connections = conns;
+        $scope.connectors = sma.Connectors;
+
+        $scope.preview = function() {
+            $scope.loading = true;
+            $http.post('/query', $scope.dataset).then(function(response) {
+                $scope.loading = false;
+                console.log(response.data);
+            }, function(response) {
+                $scope.loading = false;
+                console.log(response.data);
+            });
+        }
+
+        $scope.close = function() {
+            if ($scope.dataset.Name && $scope.dataset.Type) {
+                $mdDialog.hide($scope.dataset);
+            }
+        }
+
+        $scope.cancel = function() {
+            $mdDialog.hide($scope.original);
+        }
+    }
+
+    var showDatasetEdit = function(ev, inpDS, conns, callback) {
+        $mdDialog.show({
+            controller: editDataset,
+            templateUrl: '/app/templates/dialogues/editDataset.html',
+            parent: angular.element(document.body),
+            targetEvent: ev,
+            locals: {
+                dataset : inpDS,
+                conns : conns,
+                callback : callback
+            }
+        }).then(function(dataset) {
+            if (callback) {
+                callback(dataset);
+            }
+        });
+    }
+
     var Dialogues = {
         showConnections : showConnections,
-        configDB : showDBConfig
+        configDB : showDBConfig,
+        manageDatasets : showDataManager,
+        editDataset : showDatasetEdit
     }
     return Dialogues;
 }]);

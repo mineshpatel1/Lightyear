@@ -27,3 +27,7 @@ md-input-container .hint {
 md-input-container.noErrors .md-errors-spacer{
     display: none;
 }
+
+.code {
+    font-family: Consolas;
+}

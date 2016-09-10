@@ -34,6 +34,7 @@ var userSchema = new mongo.Schema({
         accessToken: String,
         accessTokenSecret: String
     },
+    datasets: Array,
     created: Date,
     updated: Date
 });
