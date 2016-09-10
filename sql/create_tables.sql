@@ -32,8 +32,8 @@ CREATE TABLE lyf.d_date AS (
 		(datum + (1 - EXTRACT(DAY FROM datum))::INTEGER + '1 month'::INTERVAL)::DATE - '1 day'::INTERVAL AS month_end
 	FROM (
 		-- Range should be number of days in the range, accounting for leap years
-		SELECT '2016-01-01'::DATE + SEQUENCE.DAY AS datum
-		FROM generate_series(0,731) AS SEQUENCE(DAY)
+		SELECT '2013-01-01'::DATE + SEQUENCE.DAY AS datum
+		FROM generate_series(0,1825) AS SEQUENCE(DAY)
 		GROUP BY SEQUENCE.DAY
 	     ) DQ
 );

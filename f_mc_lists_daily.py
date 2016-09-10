@@ -36,7 +36,7 @@ def main():
 				rec['unsubscribed'] = 0
 				rec['cleaned'] = 0
 
-			db.upsert('f_mc_lists_daily', rec, ['list_id']) # Update snapshot fact
+			db.upsert('f_mc_lists_daily', rec, ['date_id', 'list_id']) # Update snapshot fact
 			db.upsert('d_mc_lists', list.__dict__, ['list_id']) # Update dimension
 
 			i += 1
