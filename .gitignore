@@ -3,3 +3,4 @@ google-api.json
 *.pyc
 *.bak
 *.log
+web/node_modules

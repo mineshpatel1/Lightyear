@@ -50,22 +50,36 @@ class YT_Video():
 
 # Class for MailChimp subscriber lists
 class MC_List():
-	def __init__(self, id, name, created_date, subscribe_url='', member_count=0, \
-		unsubscribe_count=0, cleaned_count=0, campaign_count=0, open_rate=0, click_rate=0, \
+	def __init__(self, id, name, created_date, subscribe_url='', total_members=0, \
+		total_unsubscribed=0, total_cleaned=0, total_campaigns=0, open_rate=0, click_rate=0, \
 		avg_sub_rate=0, last_campaign=None, last_subscriber=None): # Initialiser
-
-		self.id = id
+		self.list_id = id
 		self.name = name
 		self.created_date = parse(created_date)
 		self.subscribe_url = subscribe_url
-		self.member_count = int(member_count)
-		self.unsubscribe_count = int(unsubscribe_count)
-		self.cleaned_count = int(cleaned_count)
-		self.campaign_count = int(campaign_count)
+		self.total_members = int(total_members)
+		self.total_unsubscribed = int(total_unsubscribed)
+		self.total_cleaned = int(total_cleaned)
+		self.total_campaigns = int(total_campaigns)
 		self.open_rate = float(open_rate)
 		self.avg_sub_rate = float(avg_sub_rate)
 		self.last_campaign = parse(last_campaign)
 		self.last_subscriber = parse(last_subscriber)
+
+class MC_Campaign():
+	def __init__(self, id, name, subject, created, emails_sent, open_rate, click_rate, subscriber_clicks, clicks, opens, \
+	 	unique_opens):
+		self.campaign_id = id
+		self.name = name
+		self.subject = subject
+		self.emails_sent = emails_sent
+		self.created_date = created
+		self.emails_sent = emails_sent
+		self.open_rate = open_rate
+		self.click_rate = click_rate
+		self.subscriber_clicks = subscriber_clicks
+		self.clicks = clicks
+		self.opens = opens
 
 # Gets a configuration value from a section and parameter name
 def get_config(section, param):
@@ -74,6 +88,7 @@ def get_config(section, param):
 	out = parser.get(section, param).replace('\\','')
 	return out
 
+# Sets a configuration value in a section
 def write_config(section, param, value):
 	parser = ConfigParser()
 	parser = ConfigParser()
@@ -319,11 +334,14 @@ def my_yt_videos():
 	return(videos)
 
 # Get MailChimp subscriber lists
-def get_mc_lists():
+def get_mc_lists(query_string=False):
 	user = get_config('MAILCHIMP', 'User')
 	api_key = get_config('MAILCHIMP', 'API_Key')
 	dc = re.search('-(.*?)$', api_key).group(1)
-	url = 'https://%s.api.mailchimp.com/3.0/lists' % dc
+	if not query_string:
+		url = 'https://%s.api.mailchimp.com/3.0/lists' % dc
+	else:
+		url = 'https://%s.api.mailchimp.com/3.0/lists?%s' % (dc, query_string)
 
 	r = requests.get(url, auth=(user, api_key))
 	r.raise_for_status()
@@ -339,3 +357,25 @@ def get_mc_lists():
 		lists.append(new_list)
 
 	return(lists)
+
+# Get MailChimp campaigns
+def get_mc_campaigns():
+	user = get_config('MAILCHIMP', 'User')
+	api_key = get_config('MAILCHIMP', 'API_Key')
+	dc = re.search('-(.*?)$', api_key).group(1)
+	url = 'https://%s.api.mailchimp.com/3.0/campaigns' % dc
+
+	r = requests.get(url, auth=(user, api_key))
+	r.raise_for_status()
+	results = r.json()
+
+	campaigns = []
+	for campaign in results['campaigns']:
+		new_campaign = MC_Campaign(campaign['id'], campaign['settings']['title'], campaign['settings']['subject_line'], \
+			campaign['create_time'], campaign['emails_sent'], campaign['report_summary']['open_rate'], \
+			campaign['report_summary']['click_rate'], campaign['report_summary']['subscriber_clicks'], \
+			campaign['report_summary']['clicks'], campaign['report_summary']['opens'], \
+		 	campaign['report_summary']['unique_opens'])
+		campaigns.append(new_campaign)
+
+	return(campaigns)
