@@ -13,6 +13,7 @@ var googleScopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/analytics.readonly'
 ];
+
 var googleAuthUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline', // 'online' (default) or 'offline' (gets refresh_token)
     scope: googleScopes // If you only need one scope you can pass it as string
@@ -61,7 +62,6 @@ exports.authUser = function(user, code, callback) {
         user.google.token = tokens;
         user.save(function() {
             exports.userInfo(user, function(err, googleUser) {
-                console.log(googleUser);
                 if (err) {
                     callback();
                 } else {

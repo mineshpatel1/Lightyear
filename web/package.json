@@ -24,11 +24,15 @@
     "mongoose": "^4.5.9",
     "node-twitter-api": "^1.7.4",
     "pg": "^6.1.0",
-    "q": "^1.4.1"
+    "q": "^1.4.1",
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.0.2",
+    "supertest": "^2.0.0"
+  },
   "scripts": {
-    "test": "test"
+    "test": "./node_modules/.bin/mocha"
   },
   "repository": {
     "type": "git",

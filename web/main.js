@@ -5,8 +5,6 @@ global.auth = require(__dirname + '/config/auth.json');
 
 var express = require('express'),
     q = require('q'),
-    http = require('http'),
-    https = require('https'),
     path = require('path'),
     mongo = require('mongoose'),
     bodyParser = require('body-parser'),
@@ -60,7 +58,7 @@ app.get('/login', function (req, res) {
 });
 
 // Retrieves the current user from the session and passes it to the callback
-function getUser(req, callback) {
+function getUser(req, res, callback) {
     if (!req.session.user) {
         res.redirect('/login');
     } else {
@@ -80,7 +78,7 @@ function checkAuth(req, res, callback) {
     if (!req.session.user) {
         res.redirect('/login');
     } else {
-        getUser(req, function(currentUser) {
+        getUser(req, res, function(currentUser) {
             var promises = [];
 
             // Facebook session check
@@ -144,11 +142,11 @@ app.post('/auth/local', function (req, res) {
         if (err) throw err;
 
         if (!user) {
-            res.status(403).send('No user with email ' + creds.email + ' found.');
+            res.status(500).send('No user with email ' + creds.email + ' found.');
         } else {
             if (user.validPassword(creds.password)) {
                 req.session.user = creds.email;
-                res.status(200).send('OK');
+                res.status(200).send();
             } else {
                 res.status(401).send('Incorrect password for ' + creds.email + '.')
             }
@@ -168,7 +166,7 @@ app.get('/auth/local/logoff', function(req, res) {
 });
 
 // Local registration
-app.post('/auth/local/register', function(req, res) {
+app.post('/local/user', function(req, res) {
     var creds = req.body;
 
     var newUser = User(creds);
@@ -184,7 +182,7 @@ app.post('/auth/local/register', function(req, res) {
             }
 
             if (errMsg.indexOf('duplicate key error') > -1) {
-                res.status(403).send('User already exists.');
+                res.status(500).send('User already exists.');
             } else {
                 res.status(500).send(errMsg);
             }
@@ -194,10 +192,16 @@ app.post('/auth/local/register', function(req, res) {
             res.status(200).send('OK');
         }
     });
-})
+});
+
+app.get('/local/user', function(req, res) {
+    getUser(req, res, function(currentUser) {
+        res.status(200).send(currentUser);
+    })
+});
 
 app.post('/settings/connections', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         currentUser.google.defaultProfileID = req.body.google.profile;
         currentUser.facebook.defaultPageID = req.body.facebook.page;
         currentUser.postgre.defaultSchema = req.body.postgre.schema;
@@ -252,7 +256,7 @@ app.delete('/auth/facebook', function(req, res) {
 
 // Facebook user information
 app.get('/facebook/user', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         if (fbApi.checkSession(currentUser)) {
             fbApi.userInfo(currentUser, function(data) {
                 data.page = currentUser.facebook.defaultPageID || data.pages[0].id;
@@ -273,7 +277,7 @@ app.post('/auth/google', function(req, res) {
 
 // Revokes Google access
 app.delete('/auth/google', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         googleApi.revokeAccess(currentUser, function() {
             res.status(200).send('OK');
         }, function() {
@@ -286,7 +290,7 @@ app.delete('/auth/google', function(req, res) {
 app.get('/auth/google/callback', function(req, res) {
     var code = req.query.code;
     if (code) {
-        getUser(req, function(currentUser) {
+        getUser(req, res, function(currentUser) {
             googleApi.authUser(currentUser, code, function() {
                 res.redirect('/');
                 res.end();
@@ -300,7 +304,7 @@ app.get('/auth/google/callback', function(req, res) {
 
 // Get user information for the Google account
 app.get('/google/user', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         if (googleApi.checkSession(currentUser)) {
             googleApi.getProfiles(currentUser, function(err, results) {
                 if (err) {
@@ -330,11 +334,15 @@ app.get('/google/user', function(req, res) {
 });
 
 app.get('/google/test', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         googleApi.userInfo(currentUser, function(err, results) {
             res.status(200).send(results);
         });
     });
+});
+
+app.get('/test', function(req, res) {
+    res.status(200).send('Test');
 });
 
 // On failure, send the authorisation URL
@@ -359,7 +367,7 @@ app.get('/auth/twitter/callback', function(req, res) {
     var requestToken = req.query.oauth_token;
     var oauth_verifier = req.query.oauth_verifier;
     if (req.session.twitterSecret) {
-        getUser(req, function(currentUser) {
+        getUser(req, res, function(currentUser) {
             twitterApi.getAccessToken(currentUser, requestToken, req.session.twitterSecret, oauth_verifier, function() {
                 res.redirect('/');
                 res.end();
@@ -373,7 +381,7 @@ app.get('/auth/twitter/callback', function(req, res) {
 
 // Revokes Facebook access
 app.delete('/auth/twitter', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         twitterApi.revokeAccess(currentUser, function(data) {
             res.status(200).send(data);
         }, function() {
@@ -384,7 +392,7 @@ app.delete('/auth/twitter', function(req, res) {
 
 // Retrieved Twitter user information
 app.get('/twitter/user', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         if (currentUser.twitter.accessToken) {
             var twitterUser = {
                 id : currentUser.twitter.id,
@@ -400,7 +408,7 @@ app.get('/twitter/user', function(req, res) {
 
 // Retrieved PostgreSQL user/db information
 app.get('/postgre/user', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         pgApi.checkSession(currentUser, function(err, schemas) {
             if (err) {
                 res.status(200).send(false);
@@ -424,7 +432,7 @@ app.get('/postgre/user', function(req, res) {
 app.post('/postgre/user', function(req, res) {
     var db = req.body;
 
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         // Encrypt user entered password
         db.password = currentUser.encrypt(db.password);
         var sampleUser = { postgre: db, decrypt: currentUser.decrypt }; // Create a dummy user to test connectivity
@@ -445,7 +453,7 @@ app.post('/postgre/user', function(req, res) {
 
 // Retrieves PostgreSQL user/db information
 app.delete('/postgre/user', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         currentUser.postgre = {};
         currentUser.save(function(err) {
             if (err) {
@@ -460,7 +468,7 @@ app.delete('/postgre/user', function(req, res) {
 // Query PostgreSQL database
 app.post('/postgre/query', function(req, res) {
     var query = req.body.query;
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         pgApi.executeSQL(query, currentUser, function(err, data) {
             if (err) {
                 res.status(500).send(err);
@@ -474,7 +482,7 @@ app.post('/postgre/query', function(req, res) {
 // Generic query, server can decide from the object how to proceed
 app.post('/query', function(req, res) {
     var dataReq = req.body;
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         switch(dataReq.Type) {
             case 'db_pg':
                 pgApi.setSchema(dataReq.Query.Schema, currentUser, function(err) {
@@ -502,14 +510,14 @@ app.post('/query', function(req, res) {
 
 // Get user's datasets
 app.get('/datasets', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         res.status(200).send(currentUser.datasets);
     });
 });
 
 // Save user's datasets
 app.post('/datasets', function(req, res) {
-    getUser(req, function(currentUser) {
+    getUser(req, res, function(currentUser) {
         currentUser.datasets = req.body;
         currentUser.save(function(err) {
             if (err) {

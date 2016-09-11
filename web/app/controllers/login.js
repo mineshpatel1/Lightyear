@@ -36,7 +36,7 @@ app.controller('login', function($scope, $timeout, $http, $mdToast, $mdDialog) {
                     'password': $scope.password
                 };
 
-                $http.post('/auth/local/register', credentials).then(function(response) {
+                $http.post('/local/user', credentials).then(function(response) {
                     $scope.loading = false;
                     navigate('/');
                 }, function(err) {
