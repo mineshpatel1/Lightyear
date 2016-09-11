@@ -172,10 +172,11 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
     function manageDatasets($scope, $mdDialog, datasets, conns) {
         $scope.datasets = datasets;
         $scope.conns = conns;
-        
+
         $scope.addDataset = function(ev) {
             Dialogues.editDataset(ev, false, $scope.conns, function(dataset) {
-                $scope.datasets.push(dataset);
+                if (dataset)
+                    $scope.datasets.push(dataset);
                 Dialogues.manageDatasets(ev, $scope.datasets, $scope.conns);
             });
         }
@@ -222,6 +223,7 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
 
     function editDataset($scope, $mdDialog, dataset, conns) {
         if (!dataset) {
+            $scope.new = true;
             dataset = new sma.Dataset(conns);
         }
         $scope.original = angular.copy(dataset);
@@ -233,7 +235,9 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
             $scope.loading = true;
             $http.post('/query', $scope.dataset).then(function(response) {
                 $scope.loading = false;
+                $scope.dataset.Data = response.data.rows;
                 console.log(response.data);
+
             }, function(response) {
                 $scope.loading = false;
                 console.log(response.data);
@@ -247,7 +251,11 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
         }
 
         $scope.cancel = function() {
-            $mdDialog.hide($scope.original);
+            if ($scope.new) { // Don't pass anything back if cancelling a new query
+                $mdDialog.hide();
+            } else {
+                $mdDialog.hide($scope.original);
+            }
         }
     }
 

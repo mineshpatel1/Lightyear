@@ -14,8 +14,6 @@ var express = require('express'),
     session = require('express-session'),
     MongoStore = require('connect-mongo')(session);
 
-var currentUser;
-
 mongo.connect('mongodb://localhost/lyf');
 
 var sessionOpts = {
@@ -41,6 +39,7 @@ var fbApi = require('./server/api/fb.js');
 var googleApi = require('./server/api/google.js');
 var twitterApi = require('./server/api/twitter.js');
 var pgApi = require('./server/api/pg.js');
+var sma = require('./app/js/sma.js'); // Social Media Analytics classes
 
 var User = require('./server/models/users.js');
 
@@ -60,75 +59,84 @@ app.get('/login', function (req, res) {
     }
 });
 
+// Retrieves the current user from the session and passes it to the callback
+function getUser(req, callback) {
+    if (!req.session.user) {
+        res.redirect('/login');
+    } else {
+        User.findOne({ email : req.session.user }, function(err, user) {
+            if (err) {
+                console.log('User: ' + req.session.user + 'could not be found in database.');
+                res.redirect('/login');
+            } else {
+                callback(user);
+            }
+        });
+    }
+}
+
 // Checks if session is authorised and redirects to login page if not
 function checkAuth(req, res, callback) {
     if (!req.session.user) {
         res.redirect('/login');
     } else {
-        // Load user profile from the database
-        User.findOne({ email : req.session.user }, function(err, user) {
-            if (err) {
-                console.log('User could not be found in database');
-                callback();
-            } else {
-                var promises = [];
-                currentUser = user; // Set global user
+        getUser(req, function(currentUser) {
+            var promises = [];
 
-                // Facebook session check
-                if (!fbApi.checkSession(currentUser)) {
-                    currentUser.facebook.token = false;
-                }
+            // Facebook session check
+            if (!fbApi.checkSession(currentUser)) {
+                currentUser.facebook.token = false;
+            }
 
-                // Google session check
-                var googleDef = q.defer(); // Wait on asynchronous functions
-                promises.push(googleDef.promise);
+            // Google session check
+            var googleDef = q.defer(); // Wait on asynchronous functions
+            promises.push(googleDef.promise);
 
-                if (currentUser.google.token) {
-                    googleApi.client.setCredentials({
-                        "access_token" : currentUser.google.token.access_token,
-                        "refresh_token" : currentUser.google.token.refresh_token
-                    });
-
-                    if (googleApi.checkSession(currentUser)) {
-                        googleDef.resolve();
-                    } else { // If it's expired, try to refresh the token
-                        googleApi.refreshToken(currentUser, function() {
-                            googleDef.resolve();
-                        }, function() {
-                            googleDef.resolve();
-                        })
-                    }
-                } else {
-                    googleDef.resolve();
-                }
-
-                var twitterDef = q.defer();
-                promises.push(twitterDef.promise);
-                twitterApi.checkSession(currentUser, function(error, data) {
-                    if (error) {
-                        error = JSON.parse(error.data);
-                        // Remove the user's twitter credentials unless it is for a rate limit excess (code 88)
-                        if (!error.errors[0].code == 88) {
-                            currentUser.twitter = {};
-                            currentUser.save();
-                        }
-                    }
-                    twitterDef.resolve();
+            if (currentUser.google.token) {
+                googleApi.client.setCredentials({
+                    "access_token" : currentUser.google.token.access_token,
+                    "refresh_token" : currentUser.google.token.refresh_token
                 });
 
-                // Set the schema search path
-                if (currentUser.postgre.defaultSchema) {
-                    var pgDef = q.defer();
-                    promises.push(pgDef.promise);
-                    pgApi.setSchema(currentUser.postgre.defaultSchema, currentUser, function(err) {
-                        pgDef.resolve();
-                    });
+                if (googleApi.checkSession(currentUser)) {
+                    googleDef.resolve();
+                } else { // If it's expired, try to refresh the token
+                    googleApi.refreshToken(currentUser, function() {
+                        googleDef.resolve();
+                    }, function() {
+                        googleDef.resolve();
+                    })
                 }
-
-                q.allSettled(promises).then(function() {
-                    callback();
-                })
+            } else {
+                googleDef.resolve();
             }
+
+            var twitterDef = q.defer();
+            promises.push(twitterDef.promise);
+            twitterApi.checkSession(currentUser, function(error, data) {
+                if (error) {
+                    error = JSON.parse(error.data);
+                    // Remove the user's twitter credentials unless it is for a rate limit excess (code 88)
+                    if (!error.errors[0].code == 88) {
+                        currentUser.twitter = {};
+                        currentUser.save();
+                    }
+                }
+                twitterDef.resolve();
+            });
+
+            // Set the schema search path
+            if (currentUser.postgre.defaultSchema) {
+                var pgDef = q.defer();
+                promises.push(pgDef.promise);
+                pgApi.setSchema(currentUser.postgre.defaultSchema, currentUser, function(err) {
+                    pgDef.resolve();
+                });
+            }
+
+            q.allSettled(promises).then(function() {
+                callback();
+            });
         });
     }
 }
@@ -194,17 +202,19 @@ app.post('/auth/local/register', function(req, res) {
 })
 
 app.post('/settings/connections', function(req, res) {
-    currentUser.google.defaultProfileID = req.body.google.profile;
-    currentUser.facebook.defaultPageID = req.body.facebook.page;
-    currentUser.postgre.defaultSchema = req.body.postgre.schema;
-    pgApi.setSchema(currentUser.postgre.defaultSchema, currentUser); // Sets the schema search path
+    getUser(req, function(currentUser) {
+        currentUser.google.defaultProfileID = req.body.google.profile;
+        currentUser.facebook.defaultPageID = req.body.facebook.page;
+        currentUser.postgre.defaultSchema = req.body.postgre.schema;
+        pgApi.setSchema(currentUser.postgre.defaultSchema, currentUser); // Sets the schema search path
 
-    currentUser.save(function(err) {
-        if (err) {
-            res.status(500).send('Could not save default connection settings.');
-        } else {
-            res.status(200).send('OK');
-        }
+        currentUser.save(function(err) {
+            if (err) {
+                res.status(500).send('Could not save default connection settings.');
+            } else {
+                res.status(200).send('OK');
+            }
+        });
     });
 })
 
@@ -231,32 +241,34 @@ app.delete('/auth/facebook', function(req, res) {
 });
 
 // Facebook query
-app.get('/facebook/analytics', function(req, res) {
-    var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
-        if (err) {
-            res.status(500).send(err);
-        } else {
-            res.status(200).send(results);
-        }
-    });
-
-    if (!loggedIn) {
-        res.status(401).send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
-    }
-});
+// app.get('/facebook/analytics', function(req, res) {
+//     var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
+//         if (err) {
+//             res.status(500).send(err);
+//         } else {
+//             res.status(200).send(results);
+//         }
+//     });
+//
+//     if (!loggedIn) {
+//         res.status(401).send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
+//     }
+// });
 
 // Facebook user information
 app.get('/facebook/user', function(req, res) {
-    if (fbApi.checkSession(currentUser)) {
-        fbApi.userInfo(currentUser, function(data) {
-            data.page = currentUser.facebook.defaultPageID || data.pages[0].id;
-            res.status(200).send(data);
-        }, function() {
-            res.status(200).send(false);
-        })
-    } else {
-        res.status(200).send(false)
-    }
+    getUser(req, function(currentUser) {
+        if (fbApi.checkSession(currentUser)) {
+            fbApi.userInfo(currentUser, function(data) {
+                data.page = currentUser.facebook.defaultPageID || data.pages[0].id;
+                res.status(200).send(data);
+            }, function() {
+                res.status(200).send(false);
+            })
+        } else {
+            res.status(200).send(false)
+        }
+    });
 });
 
 // Authenticate the Google API via OAuth2
@@ -266,10 +278,12 @@ app.post('/auth/google', function(req, res) {
 
 // Revokes Google access
 app.delete('/auth/google', function(req, res) {
-    googleApi.revokeAccess(currentUser, function() {
-        res.status(200).send('OK');
-    }, function() {
-        res.status(500).send('Could not revoke Google session.');
+    getUser(req, function(currentUser) {
+        googleApi.revokeAccess(currentUser, function() {
+            res.status(200).send('OK');
+        }, function() {
+            res.status(500).send('Could not revoke Google session.');
+        });
     });
 });
 
@@ -277,25 +291,27 @@ app.delete('/auth/google', function(req, res) {
 app.get('/auth/google/callback', function(req, res) {
     var code = req.query.code;
     if (code) {
-        googleApi.client.getToken(code, function(err, tokens) {
-            currentUser.google.token = tokens;
-            currentUser.save();
-            googleApi.client.setCredentials({
-                "access_token": tokens.access_token,
-                "refresh_token" : tokens.refresh_token
-            });
-            googleApi.userInfo(function(err, googleUser) {
-                if (err) {
-                    res.redirect('/');
-                    res.end();
-                } else {
-                    currentUser.google.id = googleUser.id;
-                    currentUser.google.name = googleUser.name;
-                    currentUser.save(function() {
+        getUser(req, function(currentUser) {
+            googleApi.client.getToken(code, function(err, tokens) {
+                currentUser.google.token = tokens;
+                currentUser.save();
+                googleApi.client.setCredentials({
+                    "access_token": tokens.access_token,
+                    "refresh_token" : tokens.refresh_token
+                });
+                googleApi.userInfo(function(err, googleUser) {
+                    if (err) {
                         res.redirect('/');
                         res.end();
-                    });
-                }
+                    } else {
+                        currentUser.google.id = googleUser.id;
+                        currentUser.google.name = googleUser.name;
+                        currentUser.save(function() {
+                            res.redirect('/');
+                            res.end();
+                        });
+                    }
+                });
             });
         });
     } else {
@@ -304,39 +320,30 @@ app.get('/auth/google/callback', function(req, res) {
     }
 });
 
-// Query Google Analytics
-app.get('/google/analytics', function(req, res) {
-    googleApi.query(function(err, results) {
-        if (err) { // On failure, send the authorisation URL
-            googleError(res, err);
-        } else {
-            res.status(200).send(results.rows[0]);
-        }
-    });
-});
-
 // Get user information for the Google account
 app.get('/google/user', function(req, res) {
-    if (googleApi.checkSession(currentUser)) {
-        googleApi.getProfiles(function(err, results) {
-            if (err) {
-                res.status(200).send(false);
-            } else {
-                var profiles = results.map(function(r) {
-                    return { 'name' : r.name, 'id': r.id };
-                });
+    getUser(req, function(currentUser) {
+        if (googleApi.checkSession(currentUser)) {
+            googleApi.getProfiles(function(err, results) {
+                if (err) {
+                    res.status(200).send(false);
+                } else {
+                    var profiles = results.map(function(r) {
+                        return { 'name' : r.name, 'id': r.id };
+                    });
 
-                res.status(200).send({
-                    'name' : currentUser.google.name,
-                    'profiles' : profiles,
-                    'profile' : currentUser.google.defaultProfileID || profiles[0].id,
-                    'defaultProfileID' : currentUser.google.defaultProfileID
-                });
-            }
-        });
-    } else {
-        res.status(200).send(false);
-    }
+                    res.status(200).send({
+                        'name' : currentUser.google.name,
+                        'profiles' : profiles,
+                        'profile' : currentUser.google.defaultProfileID || profiles[0].id,
+                        'defaultProfileID' : currentUser.google.defaultProfileID
+                    });
+                }
+            });
+        } else {
+            res.status(200).send(false);
+        }
+    });
 });
 
 // On failure, send the authorisation URL
@@ -361,9 +368,11 @@ app.get('/auth/twitter/callback', function(req, res) {
     var requestToken = req.query.oauth_token;
     var oauth_verifier = req.query.oauth_verifier;
     if (req.session.twitterSecret) {
-        twitterApi.getAccessToken(currentUser, requestToken, req.session.twitterSecret, oauth_verifier, function() {
-            res.redirect('/');
-            res.end();
+        getUser(req, function(currentUser) {
+            twitterApi.getAccessToken(currentUser, requestToken, req.session.twitterSecret, oauth_verifier, function() {
+                res.redirect('/');
+                res.end();
+            });
         });
     } else {
         res.redirect('/');
@@ -373,44 +382,50 @@ app.get('/auth/twitter/callback', function(req, res) {
 
 // Revokes Facebook access
 app.delete('/auth/twitter', function(req, res) {
-    twitterApi.revokeAccess(currentUser, function(data) {
-        res.status(200).send(data);
-    }, function() {
-        res.status(500).send('Could not revoke Twitter session.');
+    getUser(req, function(currentUser) {
+        twitterApi.revokeAccess(currentUser, function(data) {
+            res.status(200).send(data);
+        }, function() {
+            res.status(500).send('Could not revoke Twitter session.');
+        });
     });
 });
 
 // Retrieved Twitter user information
 app.get('/twitter/user', function(req, res) {
-    if (currentUser.twitter.accessToken) {
-        var twitterUser = {
-            id : currentUser.twitter.id,
-            name : currentUser.twitter.name,
-            handle : currentUser.twitter.handle
+    getUser(req, function(currentUser) {
+        if (currentUser.twitter.accessToken) {
+            var twitterUser = {
+                id : currentUser.twitter.id,
+                name : currentUser.twitter.name,
+                handle : currentUser.twitter.handle
+            }
+            res.status(200).send(twitterUser);
+        } else {
+            res.status(200).send(false);
         }
-        res.status(200).send(twitterUser);
-    } else {
-        res.status(200).send(false);
-    }
+    });
 });
 
 // Retrieved PostgreSQL user/db information
 app.get('/postgre/user', function(req, res) {
-    pgApi.checkSession(currentUser, function(err, schemas) {
-        if (err) {
-            res.status(200).send(false);
-        } else {
-            var dbUser = {
-                name : currentUser.postgre.username,
-                hostname : currentUser.postgre.hostname,
-                port : currentUser.postgre.port,
-                db : currentUser.postgre.db,
-                defaultSchema : currentUser.postgre.defaultSchema,
-                schemas : schemas,
-                schema : currentUser.postgre.defaultSchema || schemas[0]
+    getUser(req, function(currentUser) {
+        pgApi.checkSession(currentUser, function(err, schemas) {
+            if (err) {
+                res.status(200).send(false);
+            } else {
+                var dbUser = {
+                    name : currentUser.postgre.username,
+                    hostname : currentUser.postgre.hostname,
+                    port : currentUser.postgre.port,
+                    db : currentUser.postgre.db,
+                    defaultSchema : currentUser.postgre.defaultSchema,
+                    schemas : schemas,
+                    schema : currentUser.postgre.defaultSchema || schemas[0]
+                }
+                res.status(200).send(dbUser);
             }
-            res.status(200).send(dbUser);
-        }
+        });
     });
 });
 
@@ -418,83 +433,101 @@ app.get('/postgre/user', function(req, res) {
 app.post('/postgre/user', function(req, res) {
     var db = req.body;
 
-    // Encrypt user entered password
-    db.password = currentUser.encrypt(db.password);
-    var sampleUser = { postgre: db, decrypt: currentUser.decrypt }; // Create a dummy user to test connectivity
-    pgApi.checkSession(sampleUser, function(err, data) {
-        if (err) {
-            console.log(err);
-            res.status(500).send(err);
-        } else {
-            currentUser.postgre = db;
-            currentUser.save();
-            var out = currentUser.postgre;
-            out.schemas = data;
-            res.status(200).send(out);
-        }
+    getUser(req, function(currentUser) {
+        // Encrypt user entered password
+        db.password = currentUser.encrypt(db.password);
+        var sampleUser = { postgre: db, decrypt: currentUser.decrypt }; // Create a dummy user to test connectivity
+        pgApi.checkSession(sampleUser, function(err, data) {
+            if (err) {
+                console.log(err);
+                res.status(500).send(err);
+            } else {
+                currentUser.postgre = db;
+                currentUser.save();
+                var out = currentUser.postgre;
+                out.schemas = data;
+                res.status(200).send(out);
+            }
+        });
     });
 });
 
 // Retrieves PostgreSQL user/db information
 app.delete('/postgre/user', function(req, res) {
-    currentUser.postgre = {};
-    currentUser.save(function(err) {
-        if (err) {
-            res.status(500).send();
-        } else {
-            res.status(200).send();
-        }
+    getUser(req, function(currentUser) {
+        currentUser.postgre = {};
+        currentUser.save(function(err) {
+            if (err) {
+                res.status(500).send();
+            } else {
+                res.status(200).send();
+            }
+        });
     });
 });
 
 // Query PostgreSQL database
 app.post('/postgre/query', function(req, res) {
     var query = req.body.query;
-    pgApi.executeSQL(query, currentUser, function(err, data) {
-        if (err) {
-            res.status(500).send(err);
-        } else {
-            res.status(200).send(data);
-        }
-    })
+    getUser(req, function(currentUser) {
+        pgApi.executeSQL(query, currentUser, function(err, data) {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                res.status(200).send(data);
+            }
+        });
+    });
 });
 
 // Generic query, server can decide from the object how to proceed
 app.post('/query', function(req, res) {
     var dataReq = req.body;
-    switch(dataReq.Type) {
-        case 'db_pg':
-            pgApi.setSchema(dataReq.Query.schema, currentUser, function(err) {
-                pgApi.executeSQL(dataReq.Query.sql, currentUser, function(err, data) {
-                    if (err) {
-                        res.status(500).send(err);
-                    } else {
-                        res.status(200).send(data.rows);
-                    }
-                })
-            });
-            break;
-        default:
-            res.status(200).send();
-            break;
-    }
+    getUser(req, function(currentUser) {
+        switch(dataReq.Type) {
+            case 'db_pg':
+                pgApi.setSchema(dataReq.Query.Schema, currentUser, function(err) {
+                    pgApi.executeSQL(dataReq.Query.sql, currentUser, function(err, data) {
+                        if (err) {
+                            res.status(500).send(err);
+                        } else {
+                            var criteria = [];
+                            data.fields.forEach(function(col) {
+                                var newCol = new sma.api.BIColumn(col.name, col.name.replace('_', ' ').toProperCase(), pgApi.convertType(col.dataTypeID));
+                                criteria.push(newCol);
+                            });
+                            data.Criteria = criteria;
+                            res.status(200).send(data);
+                        }
+                    })
+                });
+                break;
+            default:
+                res.status(200).send();
+                break;
+        }
+    });
 });
 
 // Get user's datasets
 app.get('/datasets', function(req, res) {
-    res.status(200).send(currentUser.datasets);
+    getUser(req, function(currentUser) {
+        res.status(200).send(currentUser.datasets);
+    });
 });
 
 // Save user's datasets
 app.post('/datasets', function(req, res) {
-    currentUser.datasets = req.body;
-    currentUser.save(function(err) {
-        if (err) {
-            res.status(500).send(err);
-        } else {
-            res.status(200).send();
-        }
-    })
+    getUser(req, function(currentUser) {
+        currentUser.datasets = req.body;
+        currentUser.save(function(err) {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                res.status(200).send();
+            }
+        });
+    });
 });
 
 // Start server
@@ -503,3 +536,12 @@ var server = app.listen(global.PORT, function () {
     var port = server.address().port
     console.log("Lightyear app listening at http://%s:%s", host, port)
 });
+
+String.prototype.toProperCase = function (plural) {
+	var string = this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+	if (plural) {
+		if (string[string.length-1] != 's')
+			string += 's';
+	}
+    return string;
+};

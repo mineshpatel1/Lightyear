@@ -69,12 +69,6 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
         }, fbError);
     };
 
-    $scope.fbQuery = function() {
-        $http.get('/facebook/analytics').then(function(response) {
-            console.log(response.data);
-        }, fbError);
-    };
-
     // If the failure is due to lack of access, redirect to login page
     function fbError(err) {
         console.log(err.data);

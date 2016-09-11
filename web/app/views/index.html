@@ -3,26 +3,31 @@
     <head>
         <meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <script src="/lib/jquery/dist/jquery.min.js"></script>
+        <script src="/lib/d3/d3.min.js"></script>
         <script src="/lib/angular/angular.min.js"></script>
         <script src="/lib/angular-messages/angular-messages.min.js"></script>
         <script src="/lib/angular-animate/angular-animate.min.js"></script>
         <script src="/lib/angular-aria/angular-aria.min.js"></script>
         <script src="/lib/angular-material/angular-material.min.js"></script>
-        <link rel="stylesheet" href="/lib/angular-material/angular-material.min.css">
-        <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
+        <script type="text/javascript" src="lib/angular-material-data-table/dist/md-data-table.min.js"></script>
+        <link rel="stylesheet" href="/lib/angular-material/angular-material.min.css" type="text/css" />
+        <link rel="stylesheet" href="/lib/angular-material-data-table/dist/md-data-table.min.css" type="text/css" />
+        <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css" type="text/css" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic" type="text/css" />
 
         <title>Social Media App</title>
         <script>
-            var app = angular.module('App', ['ngMaterial', 'ngAnimate']).config(function($mdThemingProvider) {
+            var app = angular.module('App', ['ngMaterial', 'ngAnimate', 'md.data.table']).config(function($mdThemingProvider) {
                 $mdThemingProvider.theme('default')
                     .primaryPalette('indigo')
                     .accentPalette('green', {
-            			default: '500'
+            			default: '600'
             		});
             });
         </script>
         <script src="/app/js/sma.js"></script>
+        <script src="/app/js/rmvpp.js"></script>
         <script src="/app/controllers/main-app.js"></script>
         <script src="/app/services/global.js"></script>
         <script src="/app/services/dialogues.js"></script>

@@ -1,5 +1,10 @@
 pg = require('pg');
 
+// Data type parsing
+var types = require('pg').types
+types.setTypeParser(1700, 'text', parseFloat);
+types.setTypeParser(20, 'text', parseInt);
+
 // Creates a connection pool using the user specified database
 function createPool(user) {
     var config = {
@@ -49,6 +54,27 @@ exports.checkSession = function(user, callback) {
             callback(false, schemas);
         }
     })
+}
+
+// Converts integer data type to string value. Run the SQL below for full OID to type listing
+// select typname, oid, typarray from pg_type order by oid;
+exports.convertType = function(type) {
+    var varchar_types = [18, 19, 25, 1002, 1003, 1042, 1043];
+    var int_types = [20, 21, 22, 23, 1005, 1006, 1007];
+    var double_types = [700, 701, 1021, 1022, 1700];
+    var date_types = [1082, 1083, 1114, 1115];
+
+    if (varchar_types.indexOf(type) > -1) {
+        return 'varchar';
+    } else if (int_types.indexOf(type) > -1) {
+        return 'integer';
+    } else if (double_types.indexOf(type) > -1) {
+        return 'double';
+    } else if (date_types.indexOf(type) > -1) {
+        return 'date';
+    } else {    // Otherwise assume string
+        return 'varchar';
+    }
 }
 
 // Sets the schema search path for the user

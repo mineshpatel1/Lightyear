@@ -14,7 +14,7 @@
                             <md-input-container class="noErrors">
                                 <label>Type</label>
                                 <md-select ng-model="dataset.Type" required>
-                                    <md-option ng-repeat="conn in connectors" ng-value="conn.id">{{ conn.name }}</md-option>
+                                    <md-option ng-repeat="(key, val) in connectors" ng-value="key">{{ val.name }}</md-option>
                                 </md-select>
                             </md-input-container>
                             <md-input-container class="noErrors">
@@ -25,19 +25,46 @@
                         <div ng-show="dataset.Type == 'db_pg'" layout="column">
                             <md-input-container>
                                 <label>Schema</label>
-                                <md-select ng-model="dataset.Query.schema">
+                                <md-select ng-model="dataset.Query.Schema">
                                     <md-option ng-repeat="schema in connections.postgre.schemas" ng-value="schema">{{ schema }}</md-option>
                                 </md-select>
                             </md-input-container>
-                            <md-input-container class="md-block">
+                            <md-input-container class="md-block noErrors" style="margin-bottom: 0px;">
                                 <label>SQL</label>
                                 <textarea class="code" ng-model="dataset.Query.sql" rows="10"></textarea>
                             </md-input-container>
                         </div>
                     </div>
-                    <div>
-                        <div></div>
-                    </div>
+                    <md-content>
+                        <!-- <md-table-container>
+                            <table md-table>
+                                <thead md-head>
+                                    <tr md-row>
+                                        <th md-column><span>Dessert (100g serving)</span></th>
+                                        <th md-column md-numeric md-order-by="calories.value"><span>Calories</span></th>
+                                        <th md-column md-numeric>Fat (g)</th>
+                                        <th md-column md-numeric>Carbs (g)</th>
+                                        <th md-column md-numeric>Protein (g)</th>
+                                        <th md-column md-numeric>Sodium (mg)</th>
+                                        <th md-column md-numeric>Calcium (%)</th>
+                                        <th md-column md-numeric>Iron (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody md-body>
+                                    <tr md-row ng-repeat="dessert in desserts.data">
+                                        <td md-cell>{{dessert.name}}</td>
+                                        <td md-cell>{{dessert.calories.value}}</td>
+                                        <td md-cell>{{dessert.fat.value | number: 1}}</td>
+                                        <td md-cell>{{dessert.carbs.value}}</td>
+                                        <td md-cell>{{dessert.protein.value | number: 1}}</td>
+                                        <td md-cell>{{dessert.sodium.value}}</td>
+                                        <td md-cell>{{dessert.calcium.value}}{{dessert.calcium.unit}}</td>
+                                        <td md-cell>{{dessert.iron.value}}{{dessert.iron.unit}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </md-table-container> -->
+                    </md-content>
                 </div>
             </div>
         </md-dialog-content>
