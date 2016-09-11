@@ -26,10 +26,10 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     };
 
     $scope.test = function() {
-        $http.post('/postgre/query', { query : "select * from f_twitter_daily" }).then(function(response) {
-            console.log(response);
+        $http.get('/google/test').then(function(response) {
+            $scope.test_var = response.data.name;
         }, function(response) {
-            console.log(response);
+            $scope.test_var = 'ERROR';
         });
     }
 

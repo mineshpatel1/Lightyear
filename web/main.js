@@ -93,11 +93,6 @@ function checkAuth(req, res, callback) {
             promises.push(googleDef.promise);
 
             if (currentUser.google.token) {
-                googleApi.client.setCredentials({
-                    "access_token" : currentUser.google.token.access_token,
-                    "refresh_token" : currentUser.google.token.refresh_token
-                });
-
                 if (googleApi.checkSession(currentUser)) {
                     googleDef.resolve();
                 } else { // If it's expired, try to refresh the token
@@ -292,26 +287,9 @@ app.get('/auth/google/callback', function(req, res) {
     var code = req.query.code;
     if (code) {
         getUser(req, function(currentUser) {
-            googleApi.client.getToken(code, function(err, tokens) {
-                currentUser.google.token = tokens;
-                currentUser.save();
-                googleApi.client.setCredentials({
-                    "access_token": tokens.access_token,
-                    "refresh_token" : tokens.refresh_token
-                });
-                googleApi.userInfo(function(err, googleUser) {
-                    if (err) {
-                        res.redirect('/');
-                        res.end();
-                    } else {
-                        currentUser.google.id = googleUser.id;
-                        currentUser.google.name = googleUser.name;
-                        currentUser.save(function() {
-                            res.redirect('/');
-                            res.end();
-                        });
-                    }
-                });
+            googleApi.authUser(currentUser, code, function() {
+                res.redirect('/');
+                res.end();
             });
         });
     } else {
@@ -324,9 +302,14 @@ app.get('/auth/google/callback', function(req, res) {
 app.get('/google/user', function(req, res) {
     getUser(req, function(currentUser) {
         if (googleApi.checkSession(currentUser)) {
-            googleApi.getProfiles(function(err, results) {
+            googleApi.getProfiles(currentUser, function(err, results) {
                 if (err) {
-                    res.status(200).send(false);
+                    res.status(200).send({
+                        'name' : currentUser.google.name,
+                        'profiles' : [],
+                        'profile' : '',
+                        'defaultProfileID' : ''
+                    });
                 } else {
                     var profiles = results.map(function(r) {
                         return { 'name' : r.name, 'id': r.id };
@@ -343,6 +326,14 @@ app.get('/google/user', function(req, res) {
         } else {
             res.status(200).send(false);
         }
+    });
+});
+
+app.get('/google/test', function(req, res) {
+    getUser(req, function(currentUser) {
+        googleApi.userInfo(currentUser, function(err, results) {
+            res.status(200).send(results);
+        });
     });
 });
 
