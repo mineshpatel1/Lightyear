@@ -197,7 +197,6 @@ var sma = (function(sma) {
 
 			// console.log(this.Name, this.DataType);
 			switch(this.DataType) {
-
 			    case 'double': formatted = numFormat(formatString, value); break;
 			    case 'integer': formatted = numFormat(formatString, value); break;
 			    case 'numeric': formatted = numFormat(formatString, value); break;

@@ -231,16 +231,34 @@ app.factory('Dialogues', ['$http', '$q', '$mdDialog', 'Global', function($http, 
         $scope.connections = conns;
         $scope.connectors = sma.Connectors;
 
+        $scope.rowLimit = 5;
+        $scope.page = 1;
+
         $scope.preview = function() {
             $scope.loading = true;
+            $scope.dataset.Data = [];
+            $scope.dataset.Query.Criteria = [];
             $http.post('/query', $scope.dataset).then(function(response) {
                 $scope.loading = false;
                 $scope.dataset.Data = response.data.rows;
-                console.log(response.data);
-
+                $scope.dataset.Query.Criteria = [];
+                response.data.Criteria.forEach(function(col) {
+                    $scope.dataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
+                });
             }, function(response) {
                 $scope.loading = false;
                 console.log(response.data);
+            });
+        }
+
+        $scope.reorderQuery = function(order) {
+            var dir = 1;
+            if (order.indexOf('-') == 0) {
+                dir = -1;
+                order = order.substr(1, order.length);
+            }
+            $scope.dataset.Data = $scope.dataset.Data.sort(function(a, b) {
+                return (a[order] - b[order]) * dir;
             });
         }
 

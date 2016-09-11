@@ -77,6 +77,17 @@ exports.convertType = function(type) {
     }
 }
 
+// Gets the aggregation rule from a column name. Imperfect check
+exports.softAggRule = function(name) {
+    if (name == 'sum' || name.indexOf('sum_') == 0) {
+        return 'sum';
+    } else if (name == 'avg' || name.indexOf('avg_') == 0) {
+        return 'avg';
+    } else {
+        return 'none';
+    }
+}
+
 // Sets the schema search path for the user
 exports.setSchema = function(schema, user, callback) {
     exports.executeSQL("set search_path to " + schema, user, callback);

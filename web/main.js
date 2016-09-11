@@ -493,7 +493,7 @@ app.post('/query', function(req, res) {
                         } else {
                             var criteria = [];
                             data.fields.forEach(function(col) {
-                                var newCol = new sma.api.BIColumn(col.name, col.name.replace('_', ' ').toProperCase(), pgApi.convertType(col.dataTypeID));
+                                var newCol = new sma.api.BIColumn(col.name, col.name.replace('_', ' ').toProperCase(), pgApi.convertType(col.dataTypeID), pgApi.softAggRule(col.name));
                                 criteria.push(newCol);
                             });
                             data.Criteria = criteria;
