@@ -54,7 +54,7 @@ var sma = (function(sma) {
 
     sma.Connectors = {
         ga: { name : 'Google Analytics' },
-        fb: { name : 'Facbeook' },
+        fb: { name : 'Facebook' },
         tw: { name : 'Twitter' },
         db_pg: { name : 'Database (PostgreSQL)' }
     }
@@ -69,7 +69,7 @@ var sma = (function(sma) {
         this.Type = type || '';
 
         /** Name of the dataset. */
-        this.Name = name || '';
+        this.Name = name || 'New Dataset';
 
         /** Query for the dataset. The structure of this object changes depending on the type. */
         this.Query = query || {
@@ -79,6 +79,9 @@ var sma = (function(sma) {
 
         /** Array of objects representing the data for the dataset. */
         this.Data = [];
+
+        /** Arbitrary property for distinguishing it from an empty object. */
+        this.Exists = true;
 
         /** Returns the object but without the data array. */
         this.noData = function() {

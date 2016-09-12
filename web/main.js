@@ -488,6 +488,7 @@ app.post('/query', function(req, res) {
                 pgApi.setSchema(dataReq.Query.Schema, currentUser, function(err) {
                     pgApi.executeSQL(dataReq.Query.sql, currentUser, function(err, data) {
                         if (err) {
+                            err.msg = err.message;
                             res.status(500).send(err);
                         } else {
                             var criteria = [];

@@ -72,7 +72,7 @@
                             <md-input-container ng-if="connections.postgre.name" style="min-width: 200px;">
                                 <label>Schema</label>
                                 <md-select ng-model="connections.postgre.schema" aria-label="Profile">
-                                    <md-option ng-repeat="schema in connections.postgre.schemas">{{ schema }}</md-option>
+                                    <md-option ng-repeat="schema in connections.postgre.schemas" ng-value="schema">{{ schema }}</md-option>
                                 </md-select>
                             </md-input-container>
                             <md-button ng-if="!connections.postgre.name" class="md-primary md-raised" ng-click="dbConfig($event)">Configure</md-button>

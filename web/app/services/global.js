@@ -1,3 +1,14 @@
+app.config(function($mdThemingProvider) {
+	$mdThemingProvider.theme('default')
+		.primaryPalette('indigo')
+		.accentPalette('green', {
+			default: '600'
+		})
+		.warnPalette('red', {
+			default: '600'
+		});
+})
+
 app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog) {
 	var fetchConnections = function(conns, success) {
 		var authCalls = [];
@@ -51,6 +62,7 @@ app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog
 		return deferred.promise;
 	}
 
+	// Gets Twitter user information and checks authentication
 	function checkTwitter(conns) {
 		var deferred = $q.defer();
 		if (!conns.twitter.name) {
@@ -71,6 +83,7 @@ app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog
 		return deferred.promise;
 	}
 
+	// Gets PostgreSQL user information and checks authentication
 	function checkPostgre(conns) {
 		var deferred = $q.defer();
 		if (!conns.postgre.name) {
@@ -91,6 +104,7 @@ app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog
 		return deferred.promise;
 	}
 
+	// Fetches the saved datasets for the user
 	var fetchDatasets = function(callback) {
 		$http.get('/datasets').then(function(response) {
 			var datasets = [];

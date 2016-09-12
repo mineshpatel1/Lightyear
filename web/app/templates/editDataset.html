@@ -1,0 +1,27 @@
+<div>
+    <md-content layout="column" ng-show="editDataset.Exists">
+        <div layout="row">
+            <md-input-container class="noErrors">
+                <label>Type</label>
+                <md-select ng-model="editDataset.Type" required>
+                    <md-option ng-repeat="(key, val) in connectors" ng-value="key">{{ val.name }}</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container class="noErrors">
+                <label>Name</label>
+                <input required ng-model="editDataset.Name"></input>
+            </md-input-container>
+        </div>
+        <div ng-show="editDataset.Type == 'db_pg'" layout="column">
+            <md-input-container>
+                <label>Schema</label>
+                <md-select ng-model="editDataset.Query.Schema">
+                    <md-option ng-repeat="schema in connections.postgre.schemas" ng-value="schema">{{ schema }}</md-option>
+                </md-select>
+            </md-input-container>
+            <div class="md-caption light">SQL</div>
+            <div ui-ace="{ showGutter: false, mode: 'sql' }" ng-model="editDataset.Query.sql"></div>
+        </div>
+        <md-button class="md-raised md-primary" ng-click="preview()">Preview</md-button>
+    </md-content>
+</div>

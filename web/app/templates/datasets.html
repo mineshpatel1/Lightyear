@@ -1,0 +1,21 @@
+<div layout="row">
+    <md-content layout="column" flex="20" class="border">
+        <div layout="row" layout-align="center">
+            <md-button class="md-raised md-primary" ng-click="save()">Save</md-button>
+            <md-button class="md-raised md-warn" ng-click="revert()">Revert</md-button>
+        </div>
+        <md-button class="md-raised md-accent" ng-click="addDataset()" aria-label="Add">
+            <md-icon md-font-icon="fa-plus" class="fa"></md-icon>
+        </md-button>
+        <md-list layout-align="left">
+            <md-list-item ng-repeat="dataset in datasets" ng-click="editDataset(dataset, $index)">
+                <p>{{ dataset.Name }}</p>
+                <md-icon class="fa md-secondary md-warn" ng-click="removeDataset(dataset, $index)" aria-label="Remove" md-font-icon="fa-times" class="fa">
+                    <md-tooltip md-direction="right">Remove</md-tooltip>
+                </md-icon>
+            </md-list-item>
+        </md-list>
+    </md-content>
+    <div edit-dataset="edit" connections="connections" error="error" loading="loading" flex="30" class="border" style="padding: 0px 10px; border-left: none;"></div>
+    <div preview-dataset dataset="edit" flex="50" class="border" style="border-left: none;"></div>
+</div>

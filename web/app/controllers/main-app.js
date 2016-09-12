@@ -1,5 +1,6 @@
 app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Global, Dialogues) {
     $scope.initialised = false;
+    $scope.mode = 'none';
     $scope.logins = {};
     $scope.fbPages = [];
     $scope.conns = {
@@ -13,9 +14,11 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
 
     // Runs on page load
     function init() {
+        $scope.loading = true;
         Global.fetchConnections($scope.conns, function() {
             Global.fetchDatasets(function(datasets) {
                 $scope.initialised = true;
+                $scope.loading = false;
                 $scope.datasets = datasets;
             })
         })
@@ -26,11 +29,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     };
 
     $scope.test = function() {
-        $http.get('/google/test').then(function(response) {
-            $scope.test_var = response.data.name;
-        }, function(response) {
-            $scope.test_var = 'ERROR';
-        });
+        console.log($scope.loading);
     }
 
     // Shows dialogue with all possible connections
@@ -40,7 +39,8 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
 
     // Manage the datasets via a dialogue
     $scope.manageDatasets = function(ev) {
-        Dialogues.manageDatasets(ev, $scope.datasets, $scope.conns);
+        // Dialogues.manageDatasets(ev, $scope.datasets, $scope.conns);
+        $scope.mode = $scope.mode == 'datasets' ? 'none' : 'datasets';
     }
 
     // Log off from the application
