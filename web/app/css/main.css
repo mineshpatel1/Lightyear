@@ -42,7 +42,7 @@ md-input-container.noErrors .md-errors-spacer{
 
 div.ace_editor {
     margin-top: 8px;
-    min-height: 300px;
+    min-height: 250px;
     font-size: 14px;
     background: rgb(250, 250, 250);
 }

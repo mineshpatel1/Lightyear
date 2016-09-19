@@ -1,5 +1,6 @@
 // Google Authentication
 var google = require('googleapis');
+var q = require('q');
 
 var OAuth2 = google.auth.OAuth2;
 var clientID = global.auth.google.client_id,
@@ -45,12 +46,36 @@ function getClient(user) {
 exports.authUrl = googleAuthUrl;
 
 /** Query the Analytics service */
-exports.query = function(user, profile, callback) {
+exports.query = function(user, profile, dims, metrics, startDate, endDate, callback) {
+
+    function convertYYYYMMDD(date) {
+        // Unless it's a valid string, try converting to a date
+        if (!/today|yesterday|[0-9]+(daysAgo)/.test(date)) {
+            date = new Date(date);
+        }
+
+        if (date instanceof Date) {
+            return date.toISOString().slice(0, 10);
+        } else {
+            return date;
+        }
+    }
+
+    // Convert dates to YYYY-MM-DD
+    startDate = convertYYYYMMDD(startDate);
+    endDate = convertYYYYMMDD(endDate);
+
+    startDate = startDate || '7daysAgo';
+    endDate = endDate || 'today';
+    metrics = metrics.join(',');
+    dims = dims.join(',');
+
     var Analytics = google.analytics({ 'version' : 'v3', 'auth' : getClient(user) });
     var params = {
-        'start-date' : '7daysAgo',
-        'end-date' : 'today',
-        'metrics' : 'ga:sessions',
+        'start-date' : startDate,
+        'end-date' : endDate,
+        'metrics' : metrics,
+        'dimensions' : dims,
         'ids' : 'ga:' + profile
     };
     Analytics.data.ga.get(params, callback);
@@ -79,11 +104,38 @@ exports.authUser = function(user, code, callback) {
 // Get Google Analytics profiles
 exports.getProfiles = function(user, callback) {
     var Analytics = google.analytics({ 'version' : 'v3', 'auth' : getClient(user) });
-    Analytics.management.accountSummaries.list({}, function(err, results) {
+    Analytics.management.accountSummaries.list({}, function(err, accounts) {
         if (!err) {
-            results = results.items;
+            var promises = []; // Set up promise array so query is returned with all profiles
+            var profiles = [];
+
+            accounts.items.forEach(function(account) {
+                var defer = q.defer();
+                promises.push(defer.promise);
+
+                // Fetch Google Analytics profiles (views)
+                Analytics.management.profiles.list( {
+                    accountId : account.id ,
+                    webPropertyId : account.webProperties[0].id
+                }, function(err, results) {
+                    if (!err) {
+                        results.items.forEach(function(profile) {
+                            var newProfile = profile;
+                            newProfile.fullName = account.name + ' - ' + profile.name;
+                            profiles.push(newProfile);
+                        });
+                    }
+
+                    defer.resolve();
+                });
+            });
+
+            q.allSettled(promises).then(function() {
+                callback(err, profiles);
+            });
+        } else {
+            callback(err);
         }
-        callback(err, results)
     });
 }
 

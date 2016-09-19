@@ -502,6 +502,48 @@ app.post('/query', function(req, res) {
                     })
                 });
                 break;
+            case 'ga':
+                googleApi.query(currentUser, dataReq.Query.Profile, dataReq.Query.Dimensions, dataReq.Query.Measures, dataReq.Query.StartDate, dataReq.Query.EndDate, function(err, data) {
+                    if (err) {
+                        res.status(500).send(err);
+                    } else {
+                        var criteria = [];
+                        data.columnHeaders.forEach(function(col) {
+
+                            // Get column name from the configuration
+                            var colName = '', aggRule = 'none';
+                            if (col.columnType == 'DIMENSION') {
+                                colName = sma.api.Config.GADims[col.name];
+                            } else {
+                                colName = sma.api.Config.GAMeasures[col.name].name;
+                                aggRule = sma.api.Config.GAMeasures[col.name].aggRule;
+                            }
+
+                            // Translate the data type
+                            var dataType = col.dataType.toLowerCase();
+                            if (dataType == 'time') {
+                                dataType = 'double'; // Durations come through as TIME by default
+                            }
+
+                            var newCol = new sma.api.BIColumn(col.name, colName, dataType);
+                            criteria.push(newCol);
+                        });
+
+                        data.raw_rows = data.rows;
+
+                        data.rows.forEach(function(datum, i) {
+                            datum = {};
+                            data.columnHeaders.forEach(function(col, j) {
+                                datum[col.name] = data.raw_rows[i][j];
+                            });
+                            data.rows[i] = datum;
+                        });
+
+                        data.Criteria = criteria;
+                        res.status(200).send(data);
+                    }
+                });
+                break;
             default:
                 res.status(200).send();
                 break;

@@ -1,11 +1,12 @@
 // Dataset list
-app.directive('datasets', ['$http', function($http) {
+app.directive('datasets', ['$http', '$mdDialog', function($http, $mdDialog) {
 	return {
 		restrict: 'A',
 		replace: true,
 		templateUrl: '/app/templates/datasets.html',
 		scope: {
 			datasets: '=',
+			edit: '=',
             loading: '=',
             connections: '='
 		},
@@ -21,11 +22,21 @@ app.directive('datasets', ['$http', function($http) {
             }
 
             // Removes the dataset from the array
-            $scope.removeDataset = function(dataset, i) {
-                if ($scope.edit == dataset) {
-                    $scope.edit = {};
-                }
-                $scope.datasets.splice(i, 1);
+            $scope.removeDataset = function(ev, dataset, i) {
+				// Appending dialog to document.body to cover sidenav in docs app
+				var confirm = $mdDialog.confirm()
+					.title('Would you like to delete this query?')
+					.ariaLabel('Remove Query')
+					.targetEvent(ev)
+					.ok('Yes')
+					.cancel('No');
+
+				$mdDialog.show(confirm).then(function() {
+					if ($scope.edit == dataset) {
+	                    $scope.edit = {};
+	                }
+	                $scope.datasets.splice(i, 1);
+				});
             }
 
             // Reverts datasets to those from the database
@@ -72,6 +83,30 @@ app.directive('editDataset', ['$http', function($http) {
 		},
 		link: function($scope, $elem, $attrs) {
             $scope.connectors = sma.Connectors;
+			$scope.gaDims = sma.Config.GADims;
+			$scope.gaMeasures = sma.Config.GAMeasures;
+
+			// Add Google Analytics dimension
+			$scope.addGADim = function() {
+				if ($scope.editDataset.Query.Dimensions.length <= 7) {
+					$scope.editDataset.Query.Dimensions.push('ga:date');
+				}
+			}
+
+			// Remove dimension from the list
+			$scope.removeGADim = function(idx) {
+				$scope.editDataset.Query.Dimensions.splice(idx, 1);
+			}
+
+			// Add Google Analytics metric
+			$scope.addGAMeasure = function() {
+				$scope.editDataset.Query.Measures.push('ga:sessions');
+			}
+
+			// Remove the metric from the list
+			$scope.removeGAMeasure = function(idx) {
+				$scope.editDataset.Query.Measures.splice(idx, 1);
+			}
 
             $scope.preview = function() {
                 $scope.loading = true;
@@ -82,9 +117,11 @@ app.directive('editDataset', ['$http', function($http) {
                     $scope.editDataset.Error = '';
                     $scope.editDataset.Data = response.data.rows;
                     $scope.editDataset.Query.Criteria = [];
+					console.log(response.data);
                     response.data.Criteria.forEach(function(col) {
                         $scope.editDataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
                     });
+					console.log($scope.editDataset.Query.Criteria)
                 }, function(response) {
                     $scope.loading = false;
                     $scope.editDataset.Error = 'Error: ' + response.data.msg;
@@ -111,6 +148,21 @@ app.directive('previewDataset', [function() {
 		link: function($scope, $elem, $attrs) {
             $scope.rowLimit = 5;
             $scope.page = 1;
+			$scope.reorderQuery = function(col) {
+				console.log(col);
+			}
+
+			$scope.reorderQuery = function(order) {
+				var dir = 1;
+				if (order.indexOf('-') == 0) {
+					dir = -1;
+					order = order.substr(1, order.length);
+				}
+				$scope.dataset.Data = $scope.dataset.Data.sort(function(a, b) {
+					return (a[order] - b[order]) * dir;
+				});
+			}
+
 		}
 	}
 }]);

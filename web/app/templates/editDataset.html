@@ -1,27 +1,83 @@
-<div>
-    <md-content layout="column" ng-show="editDataset.Exists">
+<md-content layout="column" ng-show="editDataset.Exists" style="height: 100%;">
+    <div layout="row" style="display: block;">
+        <md-input-container class="noErrors" flex="45">
+            <label>Type</label>
+            <md-select ng-model="editDataset.Type" required>
+                <md-option ng-repeat="(key, val) in connectors" ng-value="key">{{ val.name }}</md-option>
+            </md-select>
+        </md-input-container>
+        <md-input-container class="noErrors">
+            <label>Name</label>
+            <input required ng-model="editDataset.Name"></input>
+        </md-input-container>
+    </div>
+    <div ng-show="editDataset.Type == 'db_pg'" layout="column" style="display: block">
+        <md-input-container style="display: block">
+            <label>Schema</label>
+            <md-select ng-model="editDataset.Query.Schema">
+                <md-option ng-repeat="schema in connections.postgre.schemas" ng-value="schema">{{ schema }}</md-option>
+            </md-select>
+        </md-input-container>
+        <div class="md-caption light">SQL</div>
+        <div class="editor" ui-ace="{ showGutter: false, mode: 'sql' }" ng-model="editDataset.Query.sql"></div>
+    </div>
+    <div ng-show="editDataset.Type == 'ga'" layout="column" style="display: block;">
+        <md-input-container style="display: block">
+            <label>Profile</label>
+            <md-select ng-model="editDataset.Query.Profile">
+                <md-option ng-repeat="profile in connections.google.profiles" ng-value="profile.id">{{ profile.name }}</md-option>
+            </md-select>
+        </md-input-container>
         <div layout="row">
             <md-input-container class="noErrors">
-                <label>Type</label>
-                <md-select ng-model="editDataset.Type" required>
-                    <md-option ng-repeat="(key, val) in connectors" ng-value="key">{{ val.name }}</md-option>
-                </md-select>
+                <label>From Date</label>
+                <md-datepicker ng-model="editDataset.Query.StartDate" md-max-date="editDataset.Query.EndDate" md-hide-icons="calendar" md-open-on-focus></md-datepicker>
             </md-input-container>
             <md-input-container class="noErrors">
-                <label>Name</label>
-                <input required ng-model="editDataset.Name"></input>
+                <label>To Date</label>
+                <md-datepicker ng-model="editDataset.Query.EndDate" md-min-date="editDataset.Query.StartDate" md-hide-icons="calendar" md-open-on-focus></md-datepicker>
             </md-input-container>
         </div>
-        <div ng-show="editDataset.Type == 'db_pg'" layout="column">
-            <md-input-container>
-                <label>Schema</label>
-                <md-select ng-model="editDataset.Query.Schema">
-                    <md-option ng-repeat="schema in connections.postgre.schemas" ng-value="schema">{{ schema }}</md-option>
-                </md-select>
-            </md-input-container>
-            <div class="md-caption light">SQL</div>
-            <div ui-ace="{ showGutter: false, mode: 'sql' }" ng-model="editDataset.Query.sql"></div>
+        <div>
+            <span>Dimensions</span>
+            <md-button class="md-icon-button fa md-accent" aria-label="Add Dimension" ng-click="test()">
+                <md-icon md-font-icon="fa-plus"></md-icon>
+            </md-button>
         </div>
-        <md-button class="md-raised md-primary" ng-click="preview()">Preview</md-button>
-    </md-content>
-</div>
+        <md-list>
+            <md-list-item ng-repeat="dim in editDataset.Query.Dimensions track by $index">
+                <p>
+                    <md-input-container class="noErrors" style="margin: 0px;">
+                        <md-select ng-model="editDataset.Query.Dimensions[$index]" aria-label="Dim">
+                            <md-option ng-repeat="(name, value) in gaDims" ng-value="name">{{ value }}</md-option>
+                        </md-select>
+                    </md-input-container>
+                </p>
+                <md-icon class="fa md-secondary md-warn" ng-click="removeGADim($index)" aria-label="Remove" md-font-icon="fa-times">
+                    <md-tooltip md-direction="right">Remove</md-tooltip>
+                </md-icon>
+            </md-list-item>
+        </md-list>
+        <div>
+            <span>Measure</span>
+            <md-button class="md-icon-button fa md-accent" aria-label="Add Measure" ng-click="addGAMeasure()">
+                <md-icon md-font-icon="fa-plus"></md-icon>
+            </md-button>
+        </div>
+        <md-list>
+            <md-list-item ng-repeat="dim in editDataset.Query.Measures track by $index">
+                <p>
+                    <md-input-container class="noErrors" style="margin: 0px;">
+                        <md-select ng-model="editDataset.Query.Measures[$index]" aria-label="Dim">
+                            <md-option ng-repeat="(name, value) in gaMeasures" ng-value="name">{{ value.name }}</md-option>
+                        </md-select>
+                    </md-input-container>
+                </p>
+                <md-icon class="fa md-secondary md-warn" ng-click="removeGAMeasure($index)" aria-label="Remove" md-font-icon="fa-times">
+                    <md-tooltip md-direction="right">Remove</md-tooltip>
+                </md-icon>
+            </md-list-item>
+        </md-list>
+    </div>
+    <md-button class="md-raised md-primary" ng-click="preview()">Preview</md-button>
+</md-content>

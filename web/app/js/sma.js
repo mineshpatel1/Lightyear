@@ -49,7 +49,40 @@ var sma = (function(sma) {
             'Times New Roman',
             'Trebuchet MS',
             'Verdana'
-        ]
+        ],
+        GADims : {
+            'ga:date' : 'Date',
+            'ga:year' : 'Year',
+            'ga:month' : 'Month',
+            'ga:source' : 'Source',
+            'ga:medium' : 'Medium',
+            'ga:socialNetwork' : 'Social Network',
+            'ga:userType' : 'User Type',
+            'ga:continent' : 'Continent',
+            'ga:subContinent' : 'Sub-Continent',
+            'ga:country' : 'Country',
+            'ga:region' : 'Region',
+            'ga:city' : 'City',
+            'ga:longitude' : 'Longitude',
+            'ga:latitude' : 'Latitude',
+            'ga:networkDomain' : 'Network Domain',
+            'ga:networkLocation' : 'Network Location',
+            'ga:pageTitle' : 'Page Title',
+            'ga:browser' : 'Browser',
+            'ga:deviceCategory' : 'Device Category'
+        },
+        GAMeasures : {
+            'ga:sessions' : { name : 'Sessions', aggRule : 'sum' },
+            'ga:sessionDuration' : { name : 'Session Duration', aggRule : 'sum' },
+            'ga:avgSessionDuration' : { name : 'Avg Session Duration', aggRule : 'avg' },
+            'ga:users' : { name : 'Users', aggRule : 'sum' },
+            'ga:sessionsPerUser' : { name : 'Sessions Per User', aggRule : 'avg' },
+            'ga:pageViews' : { name : 'Page Views', aggRule : 'sum' },
+            'ga:timeOnPage' : { name : 'Time on Page', aggRule : 'sum' },
+            'ga:avgTimeOnPage' : { name : 'Avg Time on Page', aggRule : 'avg' },
+            'ga:pageLoadTime' : { name : 'Page Load Time', aggRule : 'sum' },
+            'ga:avgPageLoadTime' : { name : 'Avg Page Load Time', aggRule : 'avg' }
+        }
     };
 
     sma.Connectors = {
@@ -65,6 +98,7 @@ var sma = (function(sma) {
         Defines the query as well as holding the data itself.
     */
     sma.Dataset = function(conns, type, name, query) {
+
         /** Type of the dataset, describing the connection type (Database, Twtitter, Google etc.). */
         this.Type = type || '';
 
@@ -72,10 +106,21 @@ var sma = (function(sma) {
         this.Name = name || 'New Dataset';
 
         /** Query for the dataset. The structure of this object changes depending on the type. */
-        this.Query = query || {
-            Schema: conns.postgre.defaultSchema || '',
-            Criteria: []
-        };
+        if (query) {
+            this.Query = query;
+            this.Query.StartDate = new Date(query.StartDate); // Convert back into JS date
+            this.Query.EndDate = new Date(query.EndDate); // Convert back into JS date
+        } else {
+            this.Query = {
+                Schema: conns.postgre.defaultSchema || '',
+                Profile: conns.google.defaultProfileID || '',
+                Dimensions: [],
+                Measures: [],
+                Criteria: [],
+                StartDate: new Date(),
+                EndDate: new Date()
+            };
+        }
 
         /** Array of objects representing the data for the dataset. */
         this.Data = [];
