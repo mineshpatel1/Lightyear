@@ -85,6 +85,14 @@ app.directive('editDataset', ['$http', function($http) {
             $scope.connectors = sma.Connectors;
 			$scope.gaDims = sma.Config.GADims;
 			$scope.gaMeasures = sma.Config.GAMeasures;
+			$scope.fbMeasures = sma.Config.FBMeasures;
+
+			$scope.changeType = function(oldVal, newVal) {
+				// Reset measures list if switching between Google and Facebook types
+				if ((oldVal == 'fb' && newVal == 'ga') || (newVal == 'fb' && oldVal == 'ga')) {
+					$scope.editDataset.Query.Measures = [];
+				}
+			}
 
 			// Add Google Analytics dimension
 			$scope.addGADim = function() {
@@ -108,6 +116,16 @@ app.directive('editDataset', ['$http', function($http) {
 				$scope.editDataset.Query.Measures.splice(idx, 1);
 			}
 
+			// Add Facebook metric
+			$scope.addFBMeasure = function() {
+				$scope.editDataset.Query.Measures.push('page_impressions');
+			}
+
+			// Remove the metric from the list
+			$scope.removeFBMeasure = function(idx) {
+				$scope.editDataset.Query.Measures.splice(idx, 1);
+			}
+
             $scope.preview = function() {
                 $scope.loading = true;
                 $scope.editDataset.Data = [];
@@ -118,10 +136,20 @@ app.directive('editDataset', ['$http', function($http) {
 					return new Date(date.getTime() - date.getTimezoneOffset()*60000);
 				}
 
+				// Set access token if necessary
+				if ($scope.editDataset.Type == 'fb') {
+					$scope.editDataset.Token = $scope.connections.facebook.pages.filter(function(page) {
+						return page.id == $scope.editDataset.Query.FBPage;
+					})[0].access_token;
+				} else {
+					$scope.editDataset.Token = '';
+				}
+
 				$scope.editDataset.Query.StartDate = timezoneOffset($scope.editDataset.Query.StartDate);
 				$scope.editDataset.Query.EndDate = timezoneOffset($scope.editDataset.Query.EndDate);
 
                 $http.post('/query', $scope.editDataset).then(function(response) {
+					console.log(response.data);
                     $scope.loading = false;
                     $scope.editDataset.Error = '';
                     $scope.editDataset.Data = response.data.rows;

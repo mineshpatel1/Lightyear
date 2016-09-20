@@ -2,7 +2,7 @@
     <div layout="column" style="display: block;">
         <md-input-container class="noErrors" flex="45">
             <label>Type</label>
-            <md-select ng-model="editDataset.Type" required>
+            <md-select ng-model="editDataset.Type" required ng-change="changeType('{{ editDataset.Type }}', editDataset.Type)">
                 <md-option ng-repeat="(key, val) in connectors" ng-value="key">{{ val.name }}</md-option>
             </md-select>
         </md-input-container>
@@ -61,7 +61,7 @@
             </md-list-item>
         </md-list>
         <div>
-            <span>Measure</span>
+            <span>Measures</span>
             <md-button class="md-icon-button fa md-accent" aria-label="Add Measure" ng-click="addGAMeasure()">
                 <md-icon md-font-icon="fa-plus">
                     <md-tooltip md-direction="right">Add</md-tooltip>
@@ -72,12 +72,52 @@
             <md-list-item ng-repeat="dim in editDataset.Query.Measures track by $index">
                 <p>
                     <md-input-container class="noErrors" style="margin: 0px;">
-                        <md-select ng-model="editDataset.Query.Measures[$index]" aria-label="Dim">
+                        <md-select ng-model="editDataset.Query.Measures[$index]" aria-label="Measure">
                             <md-option ng-repeat="(name, value) in gaMeasures" ng-value="name">{{ value.name }}</md-option>
                         </md-select>
                     </md-input-container>
                 </p>
                 <md-icon class="fa md-secondary md-warn" ng-click="removeGAMeasure($index)" aria-label="Remove" md-font-icon="fa-times">
+                    <md-tooltip md-direction="right">Remove</md-tooltip>
+                </md-icon>
+            </md-list-item>
+        </md-list>
+    </div>
+    <div ng-show="editDataset.Type == 'fb'" layout="column" style="display: block;">
+        <md-input-container style="display: block">
+            <label>Page</label>
+            <md-select ng-model="editDataset.Query.FBPage">
+                <md-option ng-repeat="page in connections.facebook.pages" ng-value="page.id">{{ page.name }}</md-option>
+            </md-select>
+        </md-input-container>
+        <div layout="row">
+            <md-input-container class="noErrors">
+                <label>From Date</label>
+                <md-datepicker ng-model="editDataset.Query.StartDate" md-max-date="editDataset.Query.EndDate" md-hide-icons="calendar" md-open-on-focus></md-datepicker>
+            </md-input-container>
+            <md-input-container class="noErrors">
+                <label>To Date</label>
+                <md-datepicker ng-model="editDataset.Query.EndDate" md-min-date="editDataset.Query.StartDate" md-hide-icons="calendar" md-open-on-focus></md-datepicker>
+            </md-input-container>
+        </div>
+        <div>
+            <span>Measures</span>
+            <md-button class="md-icon-button fa md-accent" aria-label="Add Measure" ng-click="addFBMeasure()">
+                <md-icon md-font-icon="fa-plus">
+                    <md-tooltip md-direction="right">Add</md-tooltip>
+                </md-icon>
+            </md-button>
+        </div>
+        <md-list>
+            <md-list-item ng-repeat="dim in editDataset.Query.Measures track by $index">
+                <p>
+                    <md-input-container class="noErrors" style="margin: 0px;">
+                        <md-select ng-model="editDataset.Query.Measures[$index]" aria-label="Measure">
+                            <md-option ng-repeat="(name, value) in fbMeasures" ng-value="name">{{ value }}</md-option>
+                        </md-select>
+                    </md-input-container>
+                </p>
+                <md-icon class="fa md-secondary md-warn" ng-click="removeFBMeasure($index)" aria-label="Remove" md-font-icon="fa-times">
                     <md-tooltip md-direction="right">Remove</md-tooltip>
                 </md-icon>
             </md-list-item>

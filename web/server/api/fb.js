@@ -1,5 +1,6 @@
-https = require('https');
-q = require('q');
+var https = require('https');
+var q = require('q');
+var sma = require('../../app/js/sma.js'); // Social Media Analytics classes
 
 var accessToken = '';
 var clientID = global.auth.facebook.client_id,
@@ -46,17 +47,42 @@ exports.query = function(accessToken, fields, callback) {
     }
 
     var req = https.request(options, function(res) {
-        if (res.statusCode == 200) {
-            parseResponse(res, function(results) {
+        parseResponse(res, function(results) {
+            if (res.statusCode == 200) {
                 callback(false, results);
-            })
-        } else {
-            callback(res, {});
-        }
-
+            } else {
+                callback(results, {});
+            }
+        });
     });
     req.end();
     return true;
+}
+
+exports.insights_query = function(accessToken, fields, period, since, until, callback) {
+    var path = '/me/insights/' + fields.join(',');
+    path += '?access_token=' + accessToken;
+
+    if (period) { path += '&period=day'; };
+    if (since) { path += '&since=' + sma.api.convertToYYYYMMDD(since); };
+    if (until) { path += '&until=' + sma.api.convertToYYYYMMDD(until); };
+
+    var options = {
+        host : 'graph.facebook.com',
+        path : path,
+        method : 'GET'
+    }
+
+    var req = https.request(options, function(res) {
+        parseResponse(res, function(results) {
+            if (res.statusCode == 200) {
+                callback(false, results);
+            } else {
+                callback(results, {});
+            }
+        });
+    });
+    req.end();
 }
 
 exports.userInfo = function(user, onSuccess, onError) {

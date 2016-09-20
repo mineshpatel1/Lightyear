@@ -82,6 +82,9 @@ var sma = (function(sma) {
             'ga:avgTimeOnPage' : { name : 'Avg Time on Page', aggRule : 'avg' },
             'ga:pageLoadTime' : { name : 'Page Load Time', aggRule : 'sum' },
             'ga:avgPageLoadTime' : { name : 'Avg Page Load Time', aggRule : 'avg' }
+        },
+        FBMeasures: {
+            'page_impressions' : 'Page Impressions'
         }
     };
 
@@ -90,6 +93,20 @@ var sma = (function(sma) {
         fb: { name : 'Facebook' },
         tw: { name : 'Twitter' },
         db_pg: { name : 'Database (PostgreSQL)' }
+    }
+
+    // Converts a date (or UTC string) into YYYY-MM-DD format
+    sma.convertToYYYYMMDD = function(date) {
+        // Unless it's a valid string, try converting to a date
+        if (!/today|yesterday|[0-9]+(daysAgo)/.test(date)) {
+            date = new Date(date);
+        }
+
+        if (date instanceof Date) {
+            return date.toISOString().slice(0, 10);
+        } else {
+            return date;
+        }
     }
 
     /**
@@ -114,6 +131,7 @@ var sma = (function(sma) {
             this.Query = {
                 Schema: conns.postgre.defaultSchema || '',
                 Profile: conns.google.defaultProfileID || '',
+                FBPage: conns.facebook.defaultPageID || '',
                 Dimensions: [],
                 Measures: [],
                 Criteria: [],
