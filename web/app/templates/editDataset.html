@@ -1,5 +1,5 @@
 <md-content layout="column" ng-show="editDataset.Exists" style="height: 100%;">
-    <div layout="row" style="display: block;">
+    <div layout="column" style="display: block;">
         <md-input-container class="noErrors" flex="45">
             <label>Type</label>
             <md-select ng-model="editDataset.Type" required>
@@ -40,8 +40,10 @@
         </div>
         <div>
             <span>Dimensions</span>
-            <md-button class="md-icon-button fa md-accent" aria-label="Add Dimension" ng-click="test()">
-                <md-icon md-font-icon="fa-plus"></md-icon>
+            <md-button class="md-icon-button fa md-accent" aria-label="Add Dimension" ng-click="addGADim()">
+                <md-icon md-font-icon="fa-plus">
+                    <md-tooltip md-direction="right">Add</md-tooltip>
+                </md-icon>
             </md-button>
         </div>
         <md-list>
@@ -61,7 +63,9 @@
         <div>
             <span>Measure</span>
             <md-button class="md-icon-button fa md-accent" aria-label="Add Measure" ng-click="addGAMeasure()">
-                <md-icon md-font-icon="fa-plus"></md-icon>
+                <md-icon md-font-icon="fa-plus">
+                    <md-tooltip md-direction="right">Add</md-tooltip>
+                </md-icon>
             </md-button>
         </div>
         <md-list>

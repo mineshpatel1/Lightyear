@@ -112,16 +112,25 @@ app.directive('editDataset', ['$http', function($http) {
                 $scope.loading = true;
                 $scope.editDataset.Data = [];
                 $scope.editDataset.Query.Criteria = [];
+
+				// Caters for timezone offset
+				function timezoneOffset(date) {
+					return new Date(date.getTime() - date.getTimezoneOffset()*60000);
+				}
+
+				$scope.editDataset.Query.StartDate = timezoneOffset($scope.editDataset.Query.StartDate);
+				$scope.editDataset.Query.EndDate = timezoneOffset($scope.editDataset.Query.EndDate);
+
                 $http.post('/query', $scope.editDataset).then(function(response) {
                     $scope.loading = false;
                     $scope.editDataset.Error = '';
                     $scope.editDataset.Data = response.data.rows;
                     $scope.editDataset.Query.Criteria = [];
-					console.log(response.data);
+
                     response.data.Criteria.forEach(function(col) {
                         $scope.editDataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
                     });
-					console.log($scope.editDataset.Query.Criteria)
+
                 }, function(response) {
                     $scope.loading = false;
                     $scope.editDataset.Error = 'Error: ' + response.data.msg;
@@ -159,7 +168,11 @@ app.directive('previewDataset', [function() {
 					order = order.substr(1, order.length);
 				}
 				$scope.dataset.Data = $scope.dataset.Data.sort(function(a, b) {
-					return (a[order] - b[order]) * dir;
+					if (dir == -1) {
+						return d3.descending(a[order], b[order]);
+					} else {
+						return d3.ascending(a[order], b[order]);
+					}
 				});
 			}
 

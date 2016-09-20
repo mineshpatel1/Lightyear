@@ -16,7 +16,6 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     function init() {
         $scope.loading = true;
         Global.fetchConnections($scope.conns, function() {
-            console.log($scope.conns);
             Global.fetchDatasets(function(datasets) {
                 $scope.initialised = true;
                 $scope.loading = false;

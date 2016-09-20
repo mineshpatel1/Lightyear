@@ -1,4 +1,4 @@
-app.config(function($mdThemingProvider) {
+app.config(function($mdThemingProvider, $mdDateLocaleProvider) {
 	$mdThemingProvider.theme('default')
 		.primaryPalette('indigo')
 		.accentPalette('green', {
@@ -7,6 +7,23 @@ app.config(function($mdThemingProvider) {
 		.warnPalette('red', {
 			default: '600'
 		});
+
+		$mdDateLocaleProvider.formatDate = function(date) {
+			if (date) {
+				// Convert to DD/MM/YYYY
+				var year = date.getFullYear().toString();
+				var month = (date.getMonth() + 1).toString();
+				if (month.length == 1)
+					month = '0' + month;
+				var day = date.getDate().toString();
+				if (day.length == 1)
+					day = '0' + day;
+
+				return day + '/' + month + '/' + year;
+			} else {
+				return '';
+			}
+		};
 })
 
 app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog) {
