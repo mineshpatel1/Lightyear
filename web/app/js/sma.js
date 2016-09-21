@@ -84,10 +84,13 @@ var sma = (function(sma) {
             'ga:avgPageLoadTime' : { name : 'Avg Page Load Time', aggRule : 'avg' }
         },
         FBMeasures: {
-            'page_impressions' : { name: 'Page Impressions', grain: 'day' },
-            'page_stories' : { name: 'Page Stories', grain: 'day' },
+            'page_impressions' : { name: 'Impressions', grain: 'day' },
+            'page_stories' : { name: 'Stories', grain: 'day' },
+            'page_fan_adds' : { name: 'New Likes', grain: 'day' },
             'page_fans' : { name: 'Total Page Likes', grain: 'lifetime' },
-            'page_fans_country' : { name: 'Page Likes By Country', grain: 'country' }
+            'page_fans_city' : { name: 'Page Likes By City', grain: 'city' },
+            'page_fans_country' : { name: 'Page Likes By Country', grain: 'country' },
+            'page_fans_gender_age' : { name: 'Page Likes By Gender and Age', grain: 'gender_age' }
         }
     };
 

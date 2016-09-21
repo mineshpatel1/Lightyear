@@ -553,7 +553,7 @@ function fbQuery(res, dataReq, currentUser) {
     var grain = sma.api.Config.FBMeasures[dataReq.Query.Measures[0]].grain;
 
     var period = grain, hasDim = false;
-    if (['country'].indexOf(period) != -1) {
+    if (['city', 'country', 'gender_age'].indexOf(period) != -1) {
         period = 'lifetime';
         hasDim = true;
     }
@@ -569,7 +569,7 @@ function fbQuery(res, dataReq, currentUser) {
                 data.data[0].values.forEach(function(val, i) {
                     var row = {};
 
-                    row['date'] = val['end_time'].slice(0, 10); // Attribute
+                    row['date'] = val['end_time'].slice(0, 10); // YYYY-MM-DD Date
                     data.data.forEach(function(set) {
                         row[set.name] = set.values[i].value;
                     });
@@ -580,8 +580,15 @@ function fbQuery(res, dataReq, currentUser) {
                     set.values.forEach(function(val) {
                         for (dim in val.value) {
                             var row = {};
-                            row['date'] = val['end_time'].slice(0, 10); // Attribute
-                            row[grain] = dim;
+                            row['date'] = val['end_time'].slice(0, 10); // YYYY-MM-DD Date
+
+                            if (grain != 'gender_age') { // Handle gender and age specially
+                                row[grain] = dim;
+                            } else {
+                                row['gender'] = dim.split('.')[0];
+                                row['age'] = dim.split('.')[1];
+                            }
+
                             row[set.name] = val.value[dim];
                             data.rows.push(row);
                         }
@@ -594,7 +601,12 @@ function fbQuery(res, dataReq, currentUser) {
             criteria.push(new sma.api.BIColumn('date', 'Date', 'string'));
 
             if (hasDim) { // Add the dimension attribute to the criteria
-                criteria.push(new sma.api.BIColumn(grain, grain.toProperCase(), 'string'));
+                if (grain != 'gender_age') { // Handle gender and age specially
+                    criteria.push(new sma.api.BIColumn(grain, grain.toProperCase(), 'string'));
+                } else {
+                    criteria.push(new sma.api.BIColumn('gender', 'Gender', 'string'));
+                    criteria.push(new sma.api.BIColumn('age', 'Age Group', 'string'));
+                }
             }
 
             data.data.forEach(function(set, i) {

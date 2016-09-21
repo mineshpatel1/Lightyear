@@ -119,8 +119,14 @@
                             <md-optgroup label="All Time">
                                 <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'lifetime' }" ng-value="name">{{ value.name }}</md-option>
                             </md-optgroup>
+                            <md-optgroup label="By City">
+                                <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'city' }" ng-value="name">{{ value.name }}</md-option>
+                            </md-optgroup>
                             <md-optgroup label="By Country">
                                 <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'country' }" ng-value="name">{{ value.name }}</md-option>
+                            </md-optgroup>
+                            <md-optgroup label="By Gender, Age">
+                                <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'gender_age' }" ng-value="name">{{ value.name }}</md-option>
                             </md-optgroup>
                         </md-select>
                     </md-input-container>
