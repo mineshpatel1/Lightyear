@@ -63,7 +63,7 @@ exports.insights_query = function(accessToken, fields, period, since, until, cal
     var path = '/me/insights/' + fields.join(',');
     path += '?access_token=' + accessToken;
 
-    if (period) { path += '&period=day'; };
+    if (period) { path += '&period=' + period; };
     if (since) { path += '&since=' + sma.api.convertToYYYYMMDD(since); };
     if (until) { path += '&until=' + sma.api.convertToYYYYMMDD(until); };
 

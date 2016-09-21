@@ -71,7 +71,7 @@ app.directive('datasets', ['$http', '$mdDialog', function($http, $mdDialog) {
 }]);
 
 // Edit/Preview Dataset
-app.directive('editDataset', ['$http', function($http) {
+app.directive('editDataset', ['$http', '$mdDialog', function($http, $mdDialog) {
 	return {
 		restrict: 'A',
 		replace: true,
@@ -126,7 +126,8 @@ app.directive('editDataset', ['$http', function($http) {
 				$scope.editDataset.Query.Measures.splice(idx, 1);
 			}
 
-            $scope.preview = function() {
+            $scope.preview = function(ev) {
+				var error = false;
                 $scope.loading = true;
                 $scope.editDataset.Data = [];
                 $scope.editDataset.Query.Criteria = [];
@@ -141,6 +142,17 @@ app.directive('editDataset', ['$http', function($http) {
 					$scope.editDataset.Token = $scope.connections.facebook.pages.filter(function(page) {
 						return page.id == $scope.editDataset.Query.FBPage;
 					})[0].access_token;
+
+					var grains = [];
+					$scope.editDataset.Query.Measures.forEach(function(measure) {
+						var grain = sma.Config.FBMeasures[measure].grain;
+						if (grains.indexOf(grain) == -1) {
+							grains.push(grain);
+						}
+					});
+					if (grains.length > 1) {
+						error = 'Metrics of mixed granularity chosen. Please choose a different combination.';
+					}
 				} else {
 					$scope.editDataset.Token = '';
 				}
@@ -148,22 +160,35 @@ app.directive('editDataset', ['$http', function($http) {
 				$scope.editDataset.Query.StartDate = timezoneOffset($scope.editDataset.Query.StartDate);
 				$scope.editDataset.Query.EndDate = timezoneOffset($scope.editDataset.Query.EndDate);
 
-                $http.post('/query', $scope.editDataset).then(function(response) {
-					console.log(response.data);
-                    $scope.loading = false;
-                    $scope.editDataset.Error = '';
-                    $scope.editDataset.Data = response.data.rows;
-                    $scope.editDataset.Query.Criteria = [];
+				if (error) {
+					$mdDialog.show(
+					      $mdDialog.alert()
+					        .clickOutsideToClose(true)
+					        .title('Invalid Query')
+					        .textContent(error)
+					        .ariaLabel('Invalid Query')
+					        .ok('Ok')
+					        .targetEvent(ev)
+					);
+					$scope.loading = false;
+				} else {
+					$http.post('/query', $scope.editDataset).then(function(response) {
+						console.log(response.data);
+	                    $scope.loading = false;
+	                    $scope.editDataset.Error = '';
+	                    $scope.editDataset.Data = response.data.rows;
+	                    $scope.editDataset.Query.Criteria = [];
 
-                    response.data.Criteria.forEach(function(col) {
-                        $scope.editDataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
-                    });
+	                    response.data.Criteria.forEach(function(col) {
+	                        $scope.editDataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
+	                    });
 
-                }, function(response) {
-                    $scope.loading = false;
-                    $scope.editDataset.Error = 'Error: ' + response.data.msg;
-                    console.log(response.data);
-                });
+	                }, function(response) {
+	                    $scope.loading = false;
+	                    $scope.editDataset.Error = 'Error: ' + response.data.msg;
+	                    console.log(response.data);
+	                });
+				}
             }
 
             $scope.test = function() {

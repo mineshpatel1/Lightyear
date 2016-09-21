@@ -84,7 +84,10 @@ var sma = (function(sma) {
             'ga:avgPageLoadTime' : { name : 'Avg Page Load Time', aggRule : 'avg' }
         },
         FBMeasures: {
-            'page_impressions' : 'Page Impressions'
+            'page_impressions' : { name: 'Page Impressions', grain: 'day' },
+            'page_stories' : { name: 'Page Stories', grain: 'day' },
+            'page_fans' : { name: 'Total Page Likes', grain: 'lifetime' },
+            'page_fans_country' : { name: 'Page Likes By Country', grain: 'country' }
         }
     };
 

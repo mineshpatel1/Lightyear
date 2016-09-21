@@ -5,7 +5,7 @@
             <table md-table>
                 <thead md-head md-on-reorder="reorderQuery">
                     <tr md-row>
-                        <th ng-repeat="col in dataset.Query.Criteria" md-column md-order-by="{{ col.ID }}" md-numeric="col.DataType != 'string' || col.DataType == 'string'">{{ col.Name }}</th>
+                        <th ng-repeat="col in dataset.Query.Criteria" md-column md-order-by="{{ col.ID }}">{{ col.Name }}</th>
                     </tr>
                 </thead>
                 <tbody md-body>

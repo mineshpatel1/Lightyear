@@ -142,3 +142,20 @@ app.factory('Global', ['$http', '$q', '$mdDialog', function($http, $q, $mdDialog
 	};
 	return Global;
 }]);
+
+// Allows for dynamic filtering of objects based on a specific key and value to search
+app.filter('objFilter', function() {
+	return function(input, search) {
+		if (!input) return input;
+		if (!search) return input;
+		var expected = ('' + search.val).toLowerCase();
+		var result = {};
+		angular.forEach(input, function(value, key) {
+			var actual = ('' + value[search.key]).toLowerCase();
+			if (actual.indexOf(expected) !== -1) {
+				result[key] = value;
+			}
+		});
+		return result;
+	}
+});

@@ -473,12 +473,26 @@ function pgQuery(res, dataReq, currentUser) {
                 err.msg = err.message;
                 res.status(500).send(err);
             } else {
-                var criteria = [];
+                var criteria = [], dates = [];
                 data.fields.forEach(function(col) {
                     var newCol = new sma.api.BIColumn(col.name, col.name.replace('_', ' ').toProperCase(), pgApi.convertType(col.dataTypeID), pgApi.softAggRule(col.name));
                     criteria.push(newCol);
+
+                    if (col.dataTypeID == 1082) {
+                        dates.push(col.name);
+                    }
                 });
                 data.Criteria = criteria;
+
+                // Convert dates to YYYY-MM-DD if they exist
+                if (dates.length > 0) {
+                    data.rows.forEach(function(row) {
+                        dates.forEach(function(dt) {
+                            row[dt] = row[dt].toISOString().slice(0,10)
+                        });
+                    });
+                }
+
                 res.status(200).send(data);
             }
         })
@@ -519,6 +533,11 @@ function gaQuery(res, dataReq, currentUser) {
                 datum = {};
                 data.columnHeaders.forEach(function(col, j) {
                     datum[col.name] = data.raw_rows[i][j];
+
+                    // Convert date into YYYY-MM-DD
+                    if (col.name == 'ga:date') {
+                        datum[col.name] = datum[col.name].substr(0,4) + '-' + datum[col.name].substr(4,2) + '-' + datum[col.name].substr(6,2);
+                    }
                 });
                 data.rows[i] = datum;
             });
@@ -531,11 +550,62 @@ function gaQuery(res, dataReq, currentUser) {
 
 // Facebook Insights query
 function fbQuery(res, dataReq, currentUser) {
-    fbApi.insights_query(dataReq.Token, dataReq.Query.Measures, 'day', dataReq.Query.StartDate, dataReq.Query.EndDate, function(err, data) {
+    var grain = sma.api.Config.FBMeasures[dataReq.Query.Measures[0]].grain;
+
+    var period = grain, hasDim = false;
+    if (['country'].indexOf(period) != -1) {
+        period = 'lifetime';
+        hasDim = true;
+    }
+
+    fbApi.insights_query(dataReq.Token, dataReq.Query.Measures, period, dataReq.Query.StartDate, dataReq.Query.EndDate, function(err, data) {
         if (err) {
             err.msg = err.error.message;
             res.status(500).send(err);
         } else {
+            data.rows = [];
+
+            if (!hasDim) { // Regular measure aggregates
+                data.data[0].values.forEach(function(val, i) {
+                    var row = {};
+
+                    row['date'] = val['end_time'].slice(0, 10); // Attribute
+                    data.data.forEach(function(set) {
+                        row[set.name] = set.values[i].value;
+                    });
+                    data.rows.push(row);
+                });
+            } else { // Flatten structure for those with attribute data too
+                data.data.forEach(function(set) {
+                    set.values.forEach(function(val) {
+                        for (dim in val.value) {
+                            var row = {};
+                            row['date'] = val['end_time'].slice(0, 10); // Attribute
+                            row[grain] = dim;
+                            row[set.name] = val.value[dim];
+                            data.rows.push(row);
+                        }
+                    });
+                });
+            }
+
+            // Create the criteria array for column definitions
+            var criteria = [];
+            criteria.push(new sma.api.BIColumn('date', 'Date', 'string'));
+
+            if (hasDim) { // Add the dimension attribute to the criteria
+                criteria.push(new sma.api.BIColumn(grain, grain.toProperCase(), 'string'));
+            }
+
+            data.data.forEach(function(set, i) {
+                if (hasDim) { // Only integer values available with dimensionable aggregates
+                    var type = 'integer';
+                } else {
+                    var type = data.data[i].values[0].value % 1 === 0 ? 'integer' : 'double';
+                }
+                criteria.push(new sma.api.BIColumn(set.name, set.title, type));
+            });
+            data.Criteria = criteria;
             res.status(200).send(data);
         }
     });

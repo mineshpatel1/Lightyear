@@ -113,7 +113,15 @@
                 <p>
                     <md-input-container class="noErrors" style="margin: 0px;">
                         <md-select ng-model="editDataset.Query.Measures[$index]" aria-label="Measure">
-                            <md-option ng-repeat="(name, value) in fbMeasures" ng-value="name">{{ value }}</md-option>
+                            <md-optgroup label="Daily">
+                                <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'day' }" ng-value="name">{{ value.name }}</md-option>
+                            </md-optgroup>
+                            <md-optgroup label="All Time">
+                                <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'lifetime' }" ng-value="name">{{ value.name }}</md-option>
+                            </md-optgroup>
+                            <md-optgroup label="By Country">
+                                <md-option ng-repeat="(name, value) in fbMeasures | objFilter: { key: 'grain', val: 'country' }" ng-value="name">{{ value.name }}</md-option>
+                            </md-optgroup>
                         </md-select>
                     </md-input-container>
                 </p>
@@ -123,5 +131,5 @@
             </md-list-item>
         </md-list>
     </div>
-    <md-button class="md-raised md-primary" ng-click="preview()">Preview</md-button>
+    <md-button class="md-raised md-primary" ng-click="preview($event)">Preview</md-button>
 </md-content>
