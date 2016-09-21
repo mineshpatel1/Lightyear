@@ -239,26 +239,12 @@ app.delete('/auth/facebook', function(req, res) {
     });
 });
 
-// Facebook query
-// app.get('/facebook/analytics', function(req, res) {
-//     var loggedIn = fbApi.query(['id', 'accounts'], function(err, results) {
-//         if (err) {
-//             res.status(500).send(err);
-//         } else {
-//             res.status(200).send(results);
-//         }
-//     });
-//
-//     if (!loggedIn) {
-//         res.status(401).send({ error: 'Not logged in to Facebook', authUrl: '/auth/facebook' });
-//     }
-// });
-
 // Facebook user information
 app.get('/facebook/user', function(req, res) {
     getUser(req, res, function(currentUser) {
         if (fbApi.checkSession(currentUser)) {
             fbApi.userInfo(currentUser, function(data) {
+                data.defaultPageID = currentUser.facebook.defaultPageID;
                 data.page = currentUser.facebook.defaultPageID || data.pages[0].id;
                 res.status(200).send(data);
             }, function() {
@@ -479,70 +465,177 @@ app.post('/postgre/query', function(req, res) {
     });
 });
 
+// PostgreSQL query
+function pgQuery(res, dataReq, currentUser) {
+    pgApi.setSchema(dataReq.Query.Schema, currentUser, function(err) {
+        pgApi.executeSQL(dataReq.Query.sql, currentUser, function(err, data) {
+            if (err) {
+                err.msg = err.message;
+                res.status(500).send(err);
+            } else {
+                var criteria = [], dates = [];
+                data.fields.forEach(function(col) {
+                    var newCol = new sma.api.BIColumn(col.name, col.name.replace('_', ' ').toProperCase(), pgApi.convertType(col.dataTypeID), pgApi.softAggRule(col.name));
+                    criteria.push(newCol);
+
+                    if (col.dataTypeID == 1082) {
+                        dates.push(col.name);
+                    }
+                });
+                data.Criteria = criteria;
+
+                // Convert dates to YYYY-MM-DD if they exist
+                if (dates.length > 0) {
+                    data.rows.forEach(function(row) {
+                        dates.forEach(function(dt) {
+                            row[dt] = row[dt].toISOString().slice(0,10)
+                        });
+                    });
+                }
+
+                res.status(200).send(data);
+            }
+        })
+    });
+}
+
+// Google Analytics query
+function gaQuery(res, dataReq, currentUser) {
+    googleApi.query(currentUser, dataReq.Query.Profile, dataReq.Query.Dimensions, dataReq.Query.Measures, dataReq.Query.StartDate, dataReq.Query.EndDate, function(err, data) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            var criteria = [];
+            data.columnHeaders.forEach(function(col) {
+
+                // Get column name from the configuration
+                var colName = '', aggRule = 'none';
+                if (col.columnType == 'DIMENSION') {
+                    colName = sma.api.Config.GADims[col.name];
+                } else {
+                    colName = sma.api.Config.GAMeasures[col.name].name;
+                    aggRule = sma.api.Config.GAMeasures[col.name].aggRule;
+                }
+
+                // Translate the data type
+                var dataType = col.dataType.toLowerCase();
+                if (dataType == 'time') {
+                    dataType = 'double'; // Durations come through as TIME by default
+                }
+
+                var newCol = new sma.api.BIColumn(col.name, colName, dataType);
+                criteria.push(newCol);
+            });
+
+            data.raw_rows = data.rows;
+
+            data.rows.forEach(function(datum, i) {
+                datum = {};
+                data.columnHeaders.forEach(function(col, j) {
+                    datum[col.name] = data.raw_rows[i][j];
+
+                    // Convert date into YYYY-MM-DD
+                    if (col.name == 'ga:date') {
+                        datum[col.name] = datum[col.name].substr(0,4) + '-' + datum[col.name].substr(4,2) + '-' + datum[col.name].substr(6,2);
+                    }
+                });
+                data.rows[i] = datum;
+            });
+
+            data.Criteria = criteria;
+            res.status(200).send(data);
+        }
+    });
+}
+
+// Facebook Insights query
+function fbQuery(res, dataReq, currentUser) {
+    var grain = sma.api.Config.FBMeasures[dataReq.Query.Measures[0]].grain;
+
+    var period = grain, hasDim = false;
+    if (['city', 'country', 'gender_age'].indexOf(period) != -1) {
+        period = 'lifetime';
+        hasDim = true;
+    }
+
+    fbApi.insights_query(dataReq.Token, dataReq.Query.Measures, period, dataReq.Query.StartDate, dataReq.Query.EndDate, function(err, data) {
+        if (err) {
+            err.msg = err.error.message;
+            res.status(500).send(err);
+        } else {
+            data.rows = [];
+
+            if (!hasDim) { // Regular measure aggregates
+                data.data[0].values.forEach(function(val, i) {
+                    var row = {};
+
+                    row['date'] = val['end_time'].slice(0, 10); // YYYY-MM-DD Date
+                    data.data.forEach(function(set) {
+                        row[set.name] = set.values[i].value;
+                    });
+                    data.rows.push(row);
+                });
+            } else { // Flatten structure for those with attribute data too
+                data.data.forEach(function(set) {
+                    set.values.forEach(function(val) {
+                        for (dim in val.value) {
+                            var row = {};
+                            row['date'] = val['end_time'].slice(0, 10); // YYYY-MM-DD Date
+
+                            if (grain != 'gender_age') { // Handle gender and age specially
+                                row[grain] = dim;
+                            } else {
+                                row['gender'] = dim.split('.')[0];
+                                row['age'] = dim.split('.')[1];
+                            }
+
+                            row[set.name] = val.value[dim];
+                            data.rows.push(row);
+                        }
+                    });
+                });
+            }
+
+            // Create the criteria array for column definitions
+            var criteria = [];
+            criteria.push(new sma.api.BIColumn('date', 'Date', 'string'));
+
+            if (hasDim) { // Add the dimension attribute to the criteria
+                if (grain != 'gender_age') { // Handle gender and age specially
+                    criteria.push(new sma.api.BIColumn(grain, grain.toProperCase(), 'string'));
+                } else {
+                    criteria.push(new sma.api.BIColumn('gender', 'Gender', 'string'));
+                    criteria.push(new sma.api.BIColumn('age', 'Age Group', 'string'));
+                }
+            }
+
+            data.data.forEach(function(set, i) {
+                if (hasDim) { // Only integer values available with dimensionable aggregates
+                    var type = 'integer';
+                } else {
+                    var type = data.data[i].values[0].value % 1 === 0 ? 'integer' : 'double';
+                }
+                criteria.push(new sma.api.BIColumn(set.name, set.title, type));
+            });
+            data.Criteria = criteria;
+            res.status(200).send(data);
+        }
+    });
+}
+
 // Generic query, server can decide from the object how to proceed
 app.post('/query', function(req, res) {
     var dataReq = req.body;
     getUser(req, res, function(currentUser) {
         switch(dataReq.Type) {
             case 'db_pg':
-                pgApi.setSchema(dataReq.Query.Schema, currentUser, function(err) {
-                    pgApi.executeSQL(dataReq.Query.sql, currentUser, function(err, data) {
-                        if (err) {
-                            err.msg = err.message;
-                            res.status(500).send(err);
-                        } else {
-                            var criteria = [];
-                            data.fields.forEach(function(col) {
-                                var newCol = new sma.api.BIColumn(col.name, col.name.replace('_', ' ').toProperCase(), pgApi.convertType(col.dataTypeID), pgApi.softAggRule(col.name));
-                                criteria.push(newCol);
-                            });
-                            data.Criteria = criteria;
-                            res.status(200).send(data);
-                        }
-                    })
-                });
+                pgQuery(res, dataReq, currentUser);
                 break;
             case 'ga':
-                googleApi.query(currentUser, dataReq.Query.Profile, dataReq.Query.Dimensions, dataReq.Query.Measures, dataReq.Query.StartDate, dataReq.Query.EndDate, function(err, data) {
-                    if (err) {
-                        res.status(500).send(err);
-                    } else {
-                        var criteria = [];
-                        data.columnHeaders.forEach(function(col) {
-
-                            // Get column name from the configuration
-                            var colName = '', aggRule = 'none';
-                            if (col.columnType == 'DIMENSION') {
-                                colName = sma.api.Config.GADims[col.name];
-                            } else {
-                                colName = sma.api.Config.GAMeasures[col.name].name;
-                                aggRule = sma.api.Config.GAMeasures[col.name].aggRule;
-                            }
-
-                            // Translate the data type
-                            var dataType = col.dataType.toLowerCase();
-                            if (dataType == 'time') {
-                                dataType = 'double'; // Durations come through as TIME by default
-                            }
-
-                            var newCol = new sma.api.BIColumn(col.name, colName, dataType);
-                            criteria.push(newCol);
-                        });
-
-                        data.raw_rows = data.rows;
-
-                        data.rows.forEach(function(datum, i) {
-                            datum = {};
-                            data.columnHeaders.forEach(function(col, j) {
-                                datum[col.name] = data.raw_rows[i][j];
-                            });
-                            data.rows[i] = datum;
-                        });
-
-                        data.Criteria = criteria;
-                        res.status(200).send(data);
-                    }
-                });
+                gaQuery(res, dataReq, currentUser);
+                break;
+            case 'fb':
+                fbQuery(res, dataReq, currentUser);
                 break;
             default:
                 res.status(200).send();

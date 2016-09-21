@@ -1,6 +1,6 @@
-// Google Authentication
 var google = require('googleapis');
 var q = require('q');
+var sma = require('../../app/js/sma.js'); // Social Media Analytics classes
 
 var OAuth2 = google.auth.OAuth2;
 var clientID = global.auth.google.client_id,
@@ -48,22 +48,9 @@ exports.authUrl = googleAuthUrl;
 /** Query the Analytics service */
 exports.query = function(user, profile, dims, metrics, startDate, endDate, callback) {
 
-    function convertYYYYMMDD(date) {
-        // Unless it's a valid string, try converting to a date
-        if (!/today|yesterday|[0-9]+(daysAgo)/.test(date)) {
-            date = new Date(date);
-        }
-
-        if (date instanceof Date) {
-            return date.toISOString().slice(0, 10);
-        } else {
-            return date;
-        }
-    }
-
     // Convert dates to YYYY-MM-DD
-    startDate = convertYYYYMMDD(startDate);
-    endDate = convertYYYYMMDD(endDate);
+    startDate = sma.api.convertToYYYYMMDD(startDate);
+    endDate = sma.api.convertToYYYYMMDD(endDate);
 
     startDate = startDate || '7daysAgo';
     endDate = endDate || 'today';

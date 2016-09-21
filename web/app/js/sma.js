@@ -82,6 +82,15 @@ var sma = (function(sma) {
             'ga:avgTimeOnPage' : { name : 'Avg Time on Page', aggRule : 'avg' },
             'ga:pageLoadTime' : { name : 'Page Load Time', aggRule : 'sum' },
             'ga:avgPageLoadTime' : { name : 'Avg Page Load Time', aggRule : 'avg' }
+        },
+        FBMeasures: {
+            'page_impressions' : { name: 'Impressions', grain: 'day' },
+            'page_stories' : { name: 'Stories', grain: 'day' },
+            'page_fan_adds' : { name: 'New Likes', grain: 'day' },
+            'page_fans' : { name: 'Total Page Likes', grain: 'lifetime' },
+            'page_fans_city' : { name: 'Page Likes By City', grain: 'city' },
+            'page_fans_country' : { name: 'Page Likes By Country', grain: 'country' },
+            'page_fans_gender_age' : { name: 'Page Likes By Gender and Age', grain: 'gender_age' }
         }
     };
 
@@ -90,6 +99,20 @@ var sma = (function(sma) {
         fb: { name : 'Facebook' },
         tw: { name : 'Twitter' },
         db_pg: { name : 'Database (PostgreSQL)' }
+    }
+
+    // Converts a date (or UTC string) into YYYY-MM-DD format
+    sma.convertToYYYYMMDD = function(date) {
+        // Unless it's a valid string, try converting to a date
+        if (!/today|yesterday|[0-9]+(daysAgo)/.test(date)) {
+            date = new Date(date);
+        }
+
+        if (date instanceof Date) {
+            return date.toISOString().slice(0, 10);
+        } else {
+            return date;
+        }
     }
 
     /**
@@ -114,6 +137,7 @@ var sma = (function(sma) {
             this.Query = {
                 Schema: conns.postgre.defaultSchema || '',
                 Profile: conns.google.defaultProfileID || '',
+                FBPage: conns.facebook.defaultPageID || '',
                 Dimensions: [],
                 Measures: [],
                 Criteria: [],

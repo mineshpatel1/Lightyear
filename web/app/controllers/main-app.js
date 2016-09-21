@@ -1,6 +1,6 @@
 app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Global, Dialogues) {
     $scope.initialised = false;
-    $scope.mode = 'none';
+    $scope.mode = 'datasets';
     $scope.logins = {};
     $scope.fbPages = [];
     $scope.conns = {

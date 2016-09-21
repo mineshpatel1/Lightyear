@@ -1,5 +1,7 @@
 pg = require('pg');
 
+var pgTimeout = 3000; // Timeout for connection to the server
+
 // Data type parsing
 var types = require('pg').types
 types.setTypeParser(1700, 'text', parseFloat);
@@ -14,7 +16,7 @@ function createPool(user) {
         host: user.postgre.hostname, // Server hosting the postgres database
         port: user.postgre.port, //env var: PGPORT
         max: 10, // max number of clients in the pool
-        idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
+        idleTimeoutMillis: 1000, // how long a client is allowed to remain idle before being closed
     };
     return new pg.Pool(config);
 }
@@ -28,13 +30,27 @@ exports.executeSQL = function(query, user, callback) {
             user.postgre.pool = createPool(user);
         }
 
+        var timedOut = false, successful = false;
+
+        setTimeout(function () {
+            if (!successful) {
+                timedOut = true;
+                if (callback) {
+                    callback('Connection to the SQL server timed out after ' + Math.round(pgTimeout / 1000) + 's.');
+                }
+            }
+        }, pgTimeout) // No queries should take more than 3 seconds
+
         user.postgre.pool.query(query, function (err, result) {
-            if (err) {
-                if (callback)
-                    callback(err);
-            } else {
-                if (callback)
-                    callback(false, result);
+            if (!timedOut) {
+                successful = true;
+                if (err) {
+                    if (callback)
+                        callback(err);
+                } else {
+                    if (callback)
+                        callback(false, result);
+                }
             }
         });
     } else {

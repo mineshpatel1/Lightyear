@@ -71,7 +71,7 @@ app.directive('datasets', ['$http', '$mdDialog', function($http, $mdDialog) {
 }]);
 
 // Edit/Preview Dataset
-app.directive('editDataset', ['$http', function($http) {
+app.directive('editDataset', ['$http', '$mdDialog', function($http, $mdDialog) {
 	return {
 		restrict: 'A',
 		replace: true,
@@ -85,6 +85,14 @@ app.directive('editDataset', ['$http', function($http) {
             $scope.connectors = sma.Connectors;
 			$scope.gaDims = sma.Config.GADims;
 			$scope.gaMeasures = sma.Config.GAMeasures;
+			$scope.fbMeasures = sma.Config.FBMeasures;
+
+			$scope.changeType = function(oldVal, newVal) {
+				// Reset measures list if switching between Google and Facebook types
+				if ((oldVal == 'fb' && newVal == 'ga') || (newVal == 'fb' && oldVal == 'ga')) {
+					$scope.editDataset.Query.Measures = [];
+				}
+			}
 
 			// Add Google Analytics dimension
 			$scope.addGADim = function() {
@@ -108,7 +116,18 @@ app.directive('editDataset', ['$http', function($http) {
 				$scope.editDataset.Query.Measures.splice(idx, 1);
 			}
 
-            $scope.preview = function() {
+			// Add Facebook metric
+			$scope.addFBMeasure = function() {
+				$scope.editDataset.Query.Measures.push('page_impressions');
+			}
+
+			// Remove the metric from the list
+			$scope.removeFBMeasure = function(idx) {
+				$scope.editDataset.Query.Measures.splice(idx, 1);
+			}
+
+            $scope.preview = function(ev) {
+				var error = false;
                 $scope.loading = true;
                 $scope.editDataset.Data = [];
                 $scope.editDataset.Query.Criteria = [];
@@ -118,24 +137,58 @@ app.directive('editDataset', ['$http', function($http) {
 					return new Date(date.getTime() - date.getTimezoneOffset()*60000);
 				}
 
+				// Set access token if necessary
+				if ($scope.editDataset.Type == 'fb') {
+					$scope.editDataset.Token = $scope.connections.facebook.pages.filter(function(page) {
+						return page.id == $scope.editDataset.Query.FBPage;
+					})[0].access_token;
+
+					var grains = [];
+					$scope.editDataset.Query.Measures.forEach(function(measure) {
+						var grain = sma.Config.FBMeasures[measure].grain;
+						if (grains.indexOf(grain) == -1) {
+							grains.push(grain);
+						}
+					});
+					if (grains.length > 1) {
+						error = 'Metrics of mixed granularity chosen. Please choose a different combination.';
+					}
+				} else {
+					$scope.editDataset.Token = '';
+				}
+
 				$scope.editDataset.Query.StartDate = timezoneOffset($scope.editDataset.Query.StartDate);
 				$scope.editDataset.Query.EndDate = timezoneOffset($scope.editDataset.Query.EndDate);
 
-                $http.post('/query', $scope.editDataset).then(function(response) {
-                    $scope.loading = false;
-                    $scope.editDataset.Error = '';
-                    $scope.editDataset.Data = response.data.rows;
-                    $scope.editDataset.Query.Criteria = [];
+				if (error) {
+					$mdDialog.show(
+					      $mdDialog.alert()
+					        .clickOutsideToClose(true)
+					        .title('Invalid Query')
+					        .textContent(error)
+					        .ariaLabel('Invalid Query')
+					        .ok('Ok')
+					        .targetEvent(ev)
+					);
+					$scope.loading = false;
+				} else {
+					$http.post('/query', $scope.editDataset).then(function(response) {
+						console.log(response.data);
+	                    $scope.loading = false;
+	                    $scope.editDataset.Error = '';
+	                    $scope.editDataset.Data = response.data.rows;
+	                    $scope.editDataset.Query.Criteria = [];
 
-                    response.data.Criteria.forEach(function(col) {
-                        $scope.editDataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
-                    });
+	                    response.data.Criteria.forEach(function(col) {
+	                        $scope.editDataset.Query.Criteria.push(new sma.BIColumn(col.Code, col.Name, col.DataType));
+	                    });
 
-                }, function(response) {
-                    $scope.loading = false;
-                    $scope.editDataset.Error = 'Error: ' + response.data.msg;
-                    console.log(response.data);
-                });
+	                }, function(response) {
+	                    $scope.loading = false;
+	                    $scope.editDataset.Error = 'Error: ' + response.data.msg;
+	                    console.log(response.data);
+	                });
+				}
             }
 
             $scope.test = function() {
