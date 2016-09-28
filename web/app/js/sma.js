@@ -95,10 +95,10 @@ var sma = (function(sma) {
     };
 
     sma.Connectors = {
-        ga: { name : 'Google Analytics' },
-        fb: { name : 'Facebook' },
-        tw: { name : 'Twitter' },
-        db_pg: { name : 'Database (PostgreSQL)' }
+        google: { name : 'Google Analytics' },
+        facebook: { name : 'Facebook' },
+        twitter: { name : 'Twitter' },
+        postgre: { name : 'Database (PostgreSQL)' }
     }
 
     // Converts a date (or UTC string) into YYYY-MM-DD format

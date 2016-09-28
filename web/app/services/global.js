@@ -159,3 +159,20 @@ app.filter('objFilter', function() {
 		return result;
 	}
 });
+
+// Filters connector list based on the currently configured.
+// Expects a connections object as the search parameter.
+app.filter('connFilter', function() {
+	return function(input, connections) {
+		if (!input) return input;
+		if (!connections) return input;
+		var result = {};
+
+		angular.forEach(input, function(value, key) {
+			if (connections[key].name) {
+				result[key] = value;
+			}
+		});
+		return result;
+	}
+});

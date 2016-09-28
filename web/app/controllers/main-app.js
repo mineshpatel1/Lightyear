@@ -29,7 +29,7 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     };
 
     $scope.test = function() {
-        console.log($scope.loading);
+        console.log($scope.conns);
     }
 
     // Shows dialogue with all possible connections
@@ -46,35 +46,6 @@ app.controller('main-app', function($scope, $timeout, $http, $q, $mdDialog, Glob
     // Log off from the application
     $scope.logout = function() {
         navigate('/auth/local/logoff');
-    }
-
-    $scope.gaQuery = function() {
-        $http.get('/google/analytics').then(function(response) {
-            $scope.gaSessions = response.data[0];
-        }, googleError);
-    };
-
-    // If the failure is due to lack of access, redirect to login page
-    function googleError(err) {
-        console.log(err.data);
-        if (err.data.hasOwnProperty('authUrl')) { // Authenticate if necessary
-            navigate(err.data.authUrl);
-        }
-    }
-
-    // Facebook Insights endpoints
-    $scope.fbLogin = function() {
-        $http.get('/auth/facebook').then(function(response) {
-            navigate(response.data);
-        }, fbError);
-    };
-
-    // If the failure is due to lack of access, redirect to login page
-    function fbError(err) {
-        console.log(err.data);
-        if (err.data.hasOwnProperty('authUrl')) { // Authenticate if necessary
-            $scope.fbLogin();
-        }
     }
 
     init();

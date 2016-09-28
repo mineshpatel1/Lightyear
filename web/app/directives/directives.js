@@ -82,6 +82,7 @@ app.directive('editDataset', ['$http', '$mdDialog', function($http, $mdDialog) {
             connections: '='
 		},
 		link: function($scope, $elem, $attrs) {
+			console.log($scope.connections);
             $scope.connectors = sma.Connectors;
 			$scope.gaDims = sma.Config.GADims;
 			$scope.gaMeasures = sma.Config.GAMeasures;
@@ -138,7 +139,7 @@ app.directive('editDataset', ['$http', '$mdDialog', function($http, $mdDialog) {
 				}
 
 				// Set access token if necessary
-				if ($scope.editDataset.Type == 'fb') {
+				if ($scope.editDataset.Type == 'facebook') {
 					$scope.editDataset.Token = $scope.connections.facebook.pages.filter(function(page) {
 						return page.id == $scope.editDataset.Query.FBPage;
 					})[0].access_token;
@@ -173,7 +174,6 @@ app.directive('editDataset', ['$http', '$mdDialog', function($http, $mdDialog) {
 					$scope.loading = false;
 				} else {
 					$http.post('/query', $scope.editDataset).then(function(response) {
-						console.log(response.data);
 	                    $scope.loading = false;
 	                    $scope.editDataset.Error = '';
 	                    $scope.editDataset.Data = response.data.rows;

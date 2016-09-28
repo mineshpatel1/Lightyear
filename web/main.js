@@ -224,18 +224,22 @@ app.post('/auth/facebook', function(req, res) {
 
 app.get('/auth/facebook/callback', function(req, res) {
     var code = req.query.code;
-    fbApi.exchangeToken(code, currentUser, function() {
-        res.redirect('/');
-        res.end();
+    getUser(req, res, function(currentUser) {
+        fbApi.exchangeToken(code, currentUser, function() {
+            res.redirect('/');
+            res.end();
+        });
     });
 });
 
 // Revokes Facebook access
 app.delete('/auth/facebook', function(req, res) {
-    fbApi.revokeAccess(currentUser, function() {
-        res.status(200).send('OK');
-    }, function() {
-        res.status(500).send('Could not revoke Facebook session.');
+    getUser(req, res, function(currentUser) {
+        fbApi.revokeAccess(currentUser, function() {
+            res.status(200).send('OK');
+        }, function() {
+            res.status(500).send('Could not revoke Facebook session.');
+        });
     });
 });
 
@@ -628,13 +632,13 @@ app.post('/query', function(req, res) {
     var dataReq = req.body;
     getUser(req, res, function(currentUser) {
         switch(dataReq.Type) {
-            case 'db_pg':
+            case 'postgre':
                 pgQuery(res, dataReq, currentUser);
                 break;
-            case 'ga':
+            case 'google':
                 gaQuery(res, dataReq, currentUser);
                 break;
-            case 'fb':
+            case 'facebook':
                 fbQuery(res, dataReq, currentUser);
                 break;
             default:

@@ -3,7 +3,7 @@
         <md-input-container class="noErrors" flex="45">
             <label>Type</label>
             <md-select ng-model="editDataset.Type" required ng-change="changeType('{{ editDataset.Type }}', editDataset.Type)">
-                <md-option ng-repeat="(key, val) in connectors" ng-value="key">{{ val.name }}</md-option>
+                <md-option ng-repeat="(key, val) in connectors | connFilter: connections" ng-value="key">{{ val.name }}</md-option>
             </md-select>
         </md-input-container>
         <md-input-container class="noErrors">
@@ -11,7 +11,7 @@
             <input required ng-model="editDataset.Name"></input>
         </md-input-container>
     </div>
-    <div ng-show="editDataset.Type == 'db_pg'" layout="column" style="display: block">
+    <div ng-show="editDataset.Type == 'postgre'" layout="column" style="display: block">
         <md-input-container style="display: block">
             <label>Schema</label>
             <md-select ng-model="editDataset.Query.Schema">
@@ -21,7 +21,7 @@
         <div class="md-caption light">SQL</div>
         <div class="editor" ui-ace="{ showGutter: false, mode: 'sql' }" ng-model="editDataset.Query.sql"></div>
     </div>
-    <div ng-show="editDataset.Type == 'ga'" layout="column" style="display: block;">
+    <div ng-show="editDataset.Type == 'google'" layout="column" style="display: block;">
         <md-input-container style="display: block">
             <label>Profile</label>
             <md-select ng-model="editDataset.Query.Profile">
@@ -83,7 +83,7 @@
             </md-list-item>
         </md-list>
     </div>
-    <div ng-show="editDataset.Type == 'fb'" layout="column" style="display: block;">
+    <div ng-show="editDataset.Type == 'facebook'" layout="column" style="display: block;">
         <md-input-container style="display: block">
             <label>Page</label>
             <md-select ng-model="editDataset.Query.FBPage">
