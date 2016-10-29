@@ -157,13 +157,14 @@ def fb_sub_query(orig_data, curr_data):
 
 # Query Facebook Graph API to get page information
 def fb_query(fields, token=False):
-	if not token:
+        if not token:
 		token = get_config('FACEBOOK', 'Access_Token')
-
-	graph_url = 'https://graph.facebook.com'
+	
+        graph_url = 'https://graph.facebook.com/v' + get_config('FACEBOOK', 'API_Version')
 	page_id = 'me' # Access token is for own page
-
-	r = requests.get('%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields))
+        url = '%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields)
+        
+        r = requests.get(url)
 	r.raise_for_status()
 
 	results = r.json()
@@ -183,7 +184,7 @@ def fb_insights_query(metrics, period=False, since=False, until=False, token=Fal
 	if not token:
 		token = get_config('FACEBOOK', 'Access_Token')
 
-	graph_url = 'https://graph.facebook.com'
+	graph_url = 'https://graph.facebook.com/v' + get_config('FACEBOOK', 'API_Version')
 	page_id = 'me' # Access token is for own page
 
 	if period:
@@ -213,7 +214,8 @@ def fb_insights_query(metrics, period=False, since=False, until=False, token=Fal
 
 # Renew Facebook access token
 def renew_fb_token():
-	url = 'https://graph.facebook.com/v2.5/oauth/access_token?grant_type=fb_exchange_token&client_id=%s' % get_config('FACEBOOK', 'App_ID')
+	url = 'https://graph.facebook.com/v' + get_config('FACEBOOK', 'API_Version')
+	url += '/oauth/access_token?grant_type=fb_exchange_token&client_id=%s' % get_config('FACEBOOK', 'App_ID')
 	url += '&client_secret=%s&Reset&fb_exchange_token=%s' % (get_config('FACEBOOK', 'App_Secret'), get_config('FACEBOOK', 'Access_Token'))
 
 	r = requests.get(url)

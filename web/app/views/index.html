@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html style="margin: 0; height: 100%;">
+    <head>
+        <meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <script src="/lib/jquery/dist/jquery.min.js"></script>
+        <script src="/lib/d3/d3.min.js"></script>
+        <script src="/lib/ace-builds/src-min/ace.js"></script>
+        <script src="/lib/angular/angular.min.js"></script>
+        <script src="/lib/angular-messages/angular-messages.min.js"></script>
+        <script src="/lib/angular-animate/angular-animate.min.js"></script>
+        <script src="/lib/angular-aria/angular-aria.min.js"></script>
+        <script src="/lib/angular-material/angular-material.min.js"></script>
+        <script src="/lib/angular-ui-ace/src/ui-ace.js"></script>
+        <script type="text/javascript" src="lib/angular-material-data-table/dist/md-data-table.min.js"></script>
+        <link rel="stylesheet" href="/lib/angular-material/angular-material.min.css" type="text/css" />
+        <link rel="stylesheet" href="/lib/angular-material-data-table/dist/md-data-table.min.css" type="text/css" />
+        <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css" type="text/css" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic" type="text/css" />
+
+        <title>Social Media App</title>
+        <script>
+            var app = angular.module('App', ['ngMaterial', 'ngAnimate', 'md.data.table', 'ui.ace']);
+        </script>
+        <script src="/app/js/sma.js"></script>
+        <script src="/app/js/rmvpp.js"></script>
+        <script src="/app/services/global.js"></script>
+        <script src="/app/services/dialogues.js"></script>
+        <script src="/app/directives/directives.js"></script>
+        <script src="/app/controllers/main-app.js"></script>
+        <link rel="stylesheet" href="/app/css/main.css">
+    </head>
+	<body ng-app="App" ng-controller="main-app" ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2 flex>
+                    <span>Social Media Analytics</span>
+                </h2>
+                <span ng-show="initialised" class="ng-fade">
+                    <md-button class="md-icon-button" aria-label="Connectivity" ng-click="showConnections($event)">
+                        <md-tooltip>Connections</md-tooltip>
+                        <md-icon md-font-icon="fa-plug" class="fa fa-2x"></md-icon>
+                    </md-button>
+                    <md-button class="md-icon-button" aria-label="Datasets" ng-click="manageDatasets($event)">
+                        <md-tooltip>Datasets</md-tooltip>
+                        <md-icon md-font-icon="fa-table" class="fa fa-2x" ng-style="{ color : mode == 'datasets' ? 'white' : ''}"></md-icon>
+                    </md-button>
+                </span>
+                <span flex></span>
+                <md-button class="md-icon-button" aria-label="Sign Out" ng-click="logout()">
+                    <md-tooltip md-direction="left">Logout</md-tooltip>
+                    <md-icon md-font-icon="fa-sign-out" class="fa fa-2x"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+        <md-progress-linear md-mode="indeterminate" ng-show="loading"></md-progress-linear>
+        <div layout-padding ng-show="initialised" class="ng-fade" style="height: calc(100% - 80px)">
+            <div layout="row" style="height: 100%;" ng-show="mode == 'datasets'" class="ng-fade">
+                <div datasets="datasets" loading="loading" connections="conns" flex="20" edit="editDataset"></div>
+                <div edit-dataset="editDataset" loading="loading" connections="conns" flex="30" class="border" style="padding: 10px; border-left: none;"></div>
+                <div preview-dataset dataset="editDataset" flex="50" class="border" style="border-left: none;"></div>
+            </div>
+        </div>
+    </body>
+</html>

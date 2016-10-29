@@ -1,0 +1,20 @@
+<md-content ng-show="dataset.Data.length > 0 || dataset.Error">
+    <div class="error padding">{{ dataset.Error }}</div>
+    <div ng-show="!dataset.Error">
+        <md-table-container style="margin-left: 15px;">
+            <table md-table>
+                <thead md-head md-on-reorder="reorderQuery">
+                    <tr md-row>
+                        <th ng-repeat="col in dataset.Query.Criteria" md-column md-order-by="{{ col.ID }}">{{ col.Name }}</th>
+                    </tr>
+                </thead>
+                <tbody md-body>
+                    <tr md-row ng-repeat="datum in dataset.Data | orderBy: tableOrder |  limitTo: rowLimit: (page - 1) * rowLimit">
+                        <td md-cell ng-repeat="(key, val) in datum">{{ val }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+        <md-table-pagination md-limit="rowLimit" md-page="page" md-limit-options="[5, 10, 15, 25]" md-total="{{ dataset.Data.length }}"></md-table-pagination>
+    </div>
+</md-content>
