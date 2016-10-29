@@ -1,6 +1,7 @@
 var mongo = require('mongoose');
 var bcrypt   = require('bcrypt-nodejs');
-var crypto = require("crypto"), algorithm = 'aes-256-ctr', key = global.auth.encryptionKey;
+var crypto = require("crypto"), algorithm = 'aes-256-ctr'
+var key = global.auth.encryptionKey;
 
 // New user schema
 var userSchema = new mongo.Schema({
