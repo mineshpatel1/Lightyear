@@ -29,7 +29,7 @@ def main():
 		fb_rec['total_video_likes'] = totalVidLikes
 
 		query = 'name,posts.since(%s){created_time,id,admin_creator,message},videos.since(%s){id,likes,description,created_time}' % (today, today)
-		results = lyf.fb_query(query)
+                results = lyf.fb_query(query)
 
 		if 'posts' in results:
 			posts = len(results['posts']['data'])

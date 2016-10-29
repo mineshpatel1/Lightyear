@@ -157,13 +157,14 @@ def fb_sub_query(orig_data, curr_data):
 
 # Query Facebook Graph API to get page information
 def fb_query(fields, token=False):
-	if not token:
+        if not token:
 		token = get_config('FACEBOOK', 'Access_Token')
-
-	graph_url = 'https://graph.facebook.com/v' + get_config('FACEBOOK', 'API_Version')
+	
+        graph_url = 'https://graph.facebook.com/v' + get_config('FACEBOOK', 'API_Version')
 	page_id = 'me' # Access token is for own page
-
-	r = requests.get('%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields))
+        url = '%s/%s?access_token=%s&fields=%s' % (graph_url, page_id, token, fields)
+        
+        r = requests.get(url)
 	r.raise_for_status()
 
 	results = r.json()
